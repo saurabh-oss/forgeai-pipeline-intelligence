@@ -478,49 +478,49 @@ footer a:hover { color:var(--accent); }
     <div class="analyzer-card">
       <div class="analyzer-icon icon-code">&#60;/&#62;</div>
       <h3>AI Code Review</h3>
-      <p>SOLID principles, DRY violations, anti-patterns, error handling, naming conventions, and readability — rated 1–10 with line-level suggestions.</p>
+      <p>Evaluates correctness, performance, SOLID principles, DRY violations, error handling, naming, and anti-patterns — with line-level suggestions and a 1–10 quality score.</p>
       <span class="tag">code-review</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-shield">&#9632;</div>
       <h3>Vulnerability Analysis</h3>
-      <p>OWASP Top 10 scanning, hardcoded secrets detection, injection vectors, and CWE mapping with specific remediation guidance.</p>
+      <p>Detects OWASP Top 10, hardcoded secrets, SQL/command injection, unsafe deserialization, and SSRF — with CWE ID mapping and specific remediation steps per finding.</p>
       <span class="tag">vulnerability</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-arch">&#9674;</div>
       <h3>Architecture Drift</h3>
-      <p>Detects layer violations, circular dependencies, coupling drift, and pattern erosion across hexagonal, layered, CQRS, and microservice architectures.</p>
+      <p>Detects layer violations, circular deps, coupling drift, and API boundary erosion across hexagonal, layered, CQRS, event-driven, and microservice patterns.</p>
       <span class="tag">architecture-drift</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-test">&#10003;</div>
       <h3>Test Gap Analysis</h3>
-      <p>Identifies untested code paths, missing edge cases, meaningless assertions, and suggests concrete test cases with pseudo-code.</p>
+      <p>Finds untested code paths, missing unit/integration/contract tests, race conditions, and boundary gaps — suggests concrete test cases with pseudo-code.</p>
       <span class="tag">test-gaps</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-dep">&#9881;</div>
       <h3>Dependency Risk</h3>
-      <p>License conflicts, unmaintained packages, unpinned versions, transitive depth analysis, and supply-chain risk scoring.</p>
+      <p>Flags GPL/license conflicts, unmaintained packages, unpinned versions, and transitive depth risk — scored 1–10 with supply-chain risk ranking.</p>
       <span class="tag">dependency-risk</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-commit">&#10070;</div>
       <h3>Commit Intelligence</h3>
-      <p>Commit hygiene scoring, breaking change detection, automatic changelog generation, and semantic versioning recommendations.</p>
+      <p>Scores commit hygiene and Conventional Commits compliance, detects breaking changes, generates changelog entries, and recommends patch/minor/major semver bumps.</p>
       <span class="tag">commit-intel</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-pipe">&#9654;</div>
       <h3>Pipeline Advisor</h3>
-      <p>Analyzes your Jenkinsfile itself — finds parallelization opportunities, missing caches, resource waste, and failure resilience gaps.</p>
+      <p>Analyzes your Jenkinsfile directly — finds parallelization wins, missing caches, secret handling issues, failure resilience gaps, and estimates the % build-time reduction achievable.</p>
       <span class="tag">pipeline-advisor</span>
     </div>
     <div class="analyzer-card">
       <div class="analyzer-icon icon-release">&#9733;</div>
       <h3>Release Readiness</h3>
-      <p>Synthesizes all prior analyses into a composite verdict: SHIP_IT, CAUTION, HOLD, or BLOCK — with weighted scoring and tech-debt estimation.</p>
+      <p>Synthesizes all analyzers with weighted scoring (security 3×, architecture 2×) into a final verdict — SHIP IT, CAUTION, HOLD, or BLOCK — plus a technical debt estimate in hours.</p>
       <span class="tag">release-readiness</span>
     </div>
   </div>
@@ -545,7 +545,7 @@ footer a:hover { color:var(--accent); }
     <div class="provider">
       <div class="provider-icon">&#9670;</div>
       <div class="provider-name">Anthropic</div>
-      <div class="provider-tag">Claude Sonnet / Opus</div>
+      <div class="provider-tag">claude-opus-4-7 / claude-sonnet-4-6</div>
     </div>
     <div class="provider">
       <div class="provider-icon">&#11044;</div>
@@ -591,7 +591,7 @@ footer a:hover { color:var(--accent); }
       </thead>
       <tbody>
         <tr><td>Architecture drift detection</td><td class="yes">&#10003; Pattern-aware</td><td class="no">&#10005; Code-level only</td></tr>
-        <tr><td>Composite release scoring</td><td class="yes">&#10003; Weighted, cross-analyzer</td><td class="no">&#10005; Single-dimension</td></tr>
+        <tr><td>Composite release scoring</td><td class="yes">&#10003; Weighted (security 3×, arch 2×)</td><td class="no">&#10005; Single-dimension</td></tr>
         <tr><td>Pipeline self-optimization</td><td class="yes">&#10003; Analyzes Jenkinsfile itself</td><td class="no">&#10005; Not available</td></tr>
         <tr><td>Air-gapped local LLM</td><td class="yes">&#10003; Ollama, LM Studio, vLLM</td><td class="no">&#10005; Cloud-only</td></tr>
         <tr><td>Multi-provider support</td><td class="yes">&#10003; OpenAI + Claude + Ollama + Groq</td><td class="no">&#10005; Single vendor lock-in</td></tr>
@@ -618,33 +618,31 @@ footer a:hover { color:var(--accent); }
       <div class="code-block-header">Full Suite — Jenkinsfile</div>
       <pre><span class="kw">def</span> report = <span class="fn">forgeAI</span>(
   analyzers: [
-    <span class="str">'code-review'</span>,
-    <span class="str">'vulnerability'</span>,
-    <span class="str">'architecture-drift'</span>,
-    <span class="str">'test-gaps'</span>,
-    <span class="str">'release-readiness'</span>
+    <span class="str">'code-review'</span>, <span class="str">'vulnerability'</span>,
+    <span class="str">'architecture-drift'</span>, <span class="str">'test-gaps'</span>,
+    <span class="str">'dependency-risk'</span>, <span class="str">'release-readiness'</span>
   ],
   sourceGlob: <span class="str">'src/**/*.java'</span>,
   contextInfo: <span class="str">'Spring Boot, hexagonal arch'</span>,
   failOnCritical: <span class="num">true</span>,
   criticalThreshold: <span class="num">4</span>
 )
-echo <span class="str">"Score: ${report.compositeScore}"</span></pre>
+echo <span class="str">"Score: ${report.compositeScore}/10"</span>
+echo <span class="str">"Security: ${report['vulnerability-Score']}"</span></pre>
     </div>
     <div class="code-block">
       <div class="code-block-header">Targeted Scan — Single Analyzer</div>
       <pre><span class="kw">def</span> sec = <span class="fn">forgeAIScan</span>(
-  analyzer: <span class="str">'vulnerability'</span>,
+  <span class="str">'vulnerability'</span>,
   source: <span class="fn">readFile</span>(<span class="str">'src/App.java'</span>),
   context: <span class="str">'Java 17 REST API, PII data'</span>
 )
-
+<span class="cm">// returns: score, severity, summary,</span>
+<span class="cm">// findingsCount, criticalCount, highCount</span>
 <span class="kw">if</span> (sec.criticalCount > <span class="num">0</span>) {
   <span class="fn">error</span>(<span class="str">"${sec.criticalCount} critical vulns"</span>)
 }
-
-<span class="cm">// Run analyzers in parallel stages</span>
-<span class="cm">// for maximum speed</span></pre>
+echo <span class="str">"Score: ${sec.score}/10 — ${sec.severity}"</span></pre>
     </div>
   </div>
 </div>
@@ -664,7 +662,7 @@ echo <span class="str">"Score: ${report.compositeScore}"</span></pre>
       <span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span>
     </div>
     <div class="report-body">
-      <div class="report-kpis">
+      <div class="report-kpis" style="grid-template-columns:repeat(5,1fr)">
         <div class="report-kpi">
           <div class="label">Composite score</div>
           <div class="value" style="color:var(--teal)">7.8<span style="font-size:0.8rem;color:var(--text-muted)">/10</span></div>
@@ -680,6 +678,10 @@ echo <span class="str">"Score: ${report.compositeScore}"</span></pre>
         <div class="report-kpi">
           <div class="label">Critical / High</div>
           <div class="value" style="color:var(--ember-1)">1 / 3</div>
+        </div>
+        <div class="report-kpi">
+          <div class="label">Analyzers Run</div>
+          <div class="value">6</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
@@ -735,8 +737,8 @@ echo <span class="str">"Score: ${report.compositeScore}"</span></pre>
     <div class="install-step">
       <span class="step-num">2</span>
       <h3>Configure your LLM</h3>
-      <p>Go to Manage Jenkins &rarr; System &rarr; ForgeAI. Pick OpenAI, Claude, Groq, or Ollama. Hit Test Connection.</p>
-      <code>Provider: Groq<br>Model: llama-3.3-70b-versatile</code>
+      <p>Go to Manage Jenkins &rarr; System &rarr; ForgeAI. Pick your provider, enter your API key credential, and hit Test Connection.</p>
+      <code>OpenAI → gpt-4o<br>Claude → claude-opus-4-7<br>Ollama → codellama:13b</code>
     </div>
     <div class="install-step">
       <span class="step-num">3</span>
