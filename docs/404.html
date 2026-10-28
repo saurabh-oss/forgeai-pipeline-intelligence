@@ -2,29 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>404 — ForgeAI</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Page not found · ForgeAI</title>
+<link rel="icon" type="image/svg+xml" href="/forgeai-pipeline-intelligence/favicon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;600&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-body {
-  margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-  background:#08090c; color:#e8ecf4; font-family:'Outfit',sans-serif;
-  text-align:center; padding:2rem;
-}
-h1 { font-family:'Instrument Serif',serif; font-size:6rem; color:#f97316; font-weight:400; margin-bottom:0.5rem; }
-p { color:#8893a7; font-size:1.1rem; margin-bottom:2rem; font-weight:300; }
-a {
-  color:#000; background:#f97316; padding:0.7rem 1.5rem; border-radius:8px;
-  text-decoration:none; font-weight:600; transition:all 0.2s;
-}
-a:hover { background:#fb923c; transform:translateY(-2px); }
+:root{--ink:#07080b;--ash:#eef1f6;--steel:#9ba6b9;--ember:#ff6b1a;--flare:#ffb547;--slag:#b0360a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;text-align:center;overflow:hidden;background:var(--ink);color:var(--ash);font-family:"Instrument Sans",system-ui,sans-serif;padding:2rem max(16px,env(safe-area-inset-right,0px)) 2rem max(16px,env(safe-area-inset-left,0px))}
+body::after{content:"";position:fixed;left:-20%;right:-20%;bottom:-45%;height:80%;z-index:-1;background:radial-gradient(50% 55% at 50% 100%,rgba(255,107,26,.5),rgba(255,107,26,.1) 50%,transparent 72%)}
+.code{font:500 .8rem/1 "JetBrains Mono",monospace;letter-spacing:.18em;color:var(--flare);text-transform:uppercase}
+h1{margin:.4em 0 0;font-family:"Archivo","Arial Black",sans-serif;font-weight:900;font-stretch:125%;font-size:clamp(4.5rem,18vw,10rem);line-height:.9;background:linear-gradient(100deg,var(--slag),var(--ember),var(--flare),var(--ember),var(--slag));-webkit-background-clip:text;background-clip:text;color:transparent}
+p{color:var(--steel);font-size:1.1rem;margin:1.2rem 0 2rem}
+a{display:inline-block;color:#1c0b02;background:linear-gradient(180deg,var(--flare),var(--ember));padding:.9rem 1.4rem;border-radius:12px;text-decoration:none;font-weight:600;transition:transform .2s}
+a:hover{transform:translateY(-2px)}
+a:focus-visible{outline:2px solid var(--flare);outline-offset:3px}
 </style>
 </head>
 <body>
-<div>
+<main>
+  <div class="code">Finished: FAILURE</div>
   <h1>404</h1>
-  <p>This page got lost in the forge.</p>
-  <a href="./">Back to ForgeAI</a>
-</div>
+  <p>This page went cold in the forge.</p>
+  <a href="/forgeai-pipeline-intelligence/">Back to ForgeAI</a>
+</main>
 </body>
 </html>
