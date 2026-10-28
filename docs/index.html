@@ -2,815 +2,1354 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ForgeAI — AI-Powered Pipeline Intelligence for Jenkins</title>
-<meta name="description" content="Open-source Jenkins plugin that brings AI code reviews, vulnerability analysis, architecture drift detection, and release readiness scoring to your CI/CD pipeline. Supports OpenAI, Claude, Ollama.">
-<meta name="keywords" content="Jenkins plugin, AI code review, DevOps, CI/CD, pipeline intelligence, vulnerability analysis, architecture drift, open source">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ForgeAI Pipeline Intelligence</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Open-source Jenkins plugin that runs eight AI analyzers in your pipeline: code review, vulnerabilities, architecture drift, test gaps, dependency risk, commits, Jenkinsfile tuning and release readiness. Works with OpenAI, Claude and Ollama.">
+<meta name="keywords" content="Jenkins plugin, AI code review, quality gate, DevOps, CI/CD, vulnerability analysis, architecture drift, Ollama, Claude, OpenAI">
+<meta name="theme-color" content="#07080b">
 
-<!-- Open Graph / LinkedIn -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="ForgeAI — AI-Powered Pipeline Intelligence for Jenkins">
-<meta property="og:description" content="8 specialized AI analyzers for code review, security, architecture drift, test gaps, and release readiness. Supports OpenAI, Claude, and local LLMs.">
+<meta property="og:title" content="ForgeAI Pipeline Intelligence for Jenkins">
+<meta property="og:description" content="Eight AI analyzers in your Jenkins pipeline, one composite score to gate the release. OpenAI, Claude or fully local with Ollama.">
 <meta property="og:image" content="https://saurabh-oss.github.io/forgeai-pipeline-intelligence/og-image.png">
 <meta property="og:url" content="https://saurabh-oss.github.io/forgeai-pipeline-intelligence/">
-
 <meta name="twitter:card" content="summary_large_image">
 
-<!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="shortcut icon" href="favicon.svg">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
 
 <style>
-:root {
-  --bg-deep: #08090c;
-  --bg-surface: #0e1117;
-  --bg-card: #151920;
-  --bg-card-hover: #1a2030;
-  --border: #1e2738;
-  --border-glow: #2a3a5a;
-  --text-primary: #e8ecf4;
-  --text-secondary: #8893a7;
-  --text-muted: #556070;
-  --accent: #f97316;
-  --accent-glow: #fb923c;
-  --accent-deep: #c2410c;
-  --ember-1: #ef4444;
-  --ember-2: #f59e0b;
-  --ember-3: #f97316;
-  --teal: #14b8a6;
-  --teal-dim: #0d9488;
-  --blue: #3b82f6;
-  --purple: #8b5cf6;
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
-  --font-mono: 'DM Mono', 'Fira Code', monospace;
+/* Layout: a foundry at night. Wide stamped-steel headlines on dark iron; the only heat on the page
+   is molten orange, and it gathers wherever the build is being judged (console, wires, gate, verdict). */
+:root{
+  --ink:#07080b;          /* page ground: cooled iron, blue-black */
+  --iron:#0d1016;         /* raised surfaces */
+  --iron-2:#141922;       /* controls, nodes */
+  --seam:#232b38;         /* hairlines */
+  --seam-hot:#5a2d12;     /* hairlines near heat */
+  --ash:#eef1f6;          /* primary text */
+  --steel:#9ba6b9;        /* secondary text */
+  --dim:#66728a;          /* tertiary text */
+  --ember:#ff6b1a;        /* molten orange: the accent */
+  --flare:#ffb547;        /* hottest amber */
+  --white-hot:#fff3dd;
+  --slag:#b0360a;         /* cooled red-orange */
+  --quench:#62d4ff;       /* water on hot steel: success / LLM traffic */
+  --sev-critical:#ff4b4b; --sev-high:#ff8a3d; --sev-medium:#f6c64e; --sev-low:#3fdc9a; --sev-info:#8b8cff;
+  --ember-08:rgba(255,107,26,.08); --ember-14:rgba(255,107,26,.14); --ember-25:rgba(255,107,26,.25);
+  --ember-40:rgba(255,107,26,.40); --ember-60:rgba(255,107,26,.60); --quench-20:rgba(98,212,255,.20);
+  --glass:rgba(7,8,11,.74); --shine:rgba(255,255,255,.06);
+  --font-display:"Archivo","Arial Black","Helvetica Neue",Arial,sans-serif;
+  --font-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
+  --maxw:1200px; --r:14px;
+  --gutter-l:max(clamp(16px,4vw,32px),env(safe-area-inset-left,0px));
+  --gutter-r:max(clamp(16px,4vw,32px),env(safe-area-inset-right,0px));
+  color-scheme:dark;
 }
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;scroll-padding-top:84px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--ash);font-family:var(--font-body);font-size:1rem;line-height:1.65;overflow-x:clip;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--ink)}
+a{color:inherit}
+img,svg,canvas{max-width:100%}
+:focus-visible{outline:2px solid var(--flare);outline-offset:3px;border-radius:6px}
+code,pre,kbd{font-family:var(--font-mono)}
+.wrap{width:100%;max-width:var(--maxw);margin-inline:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+/* ── Type ─────────────────────────────────────────────── */
+h1,h2,h3{margin:0;text-wrap:balance}
+.display{font-family:var(--font-display);font-weight:900;font-stretch:125%;text-transform:uppercase;line-height:.94;letter-spacing:-.01em}
+h1.display{font-size:clamp(2.6rem,6.4vw,5.6rem)}
+h2.display{font-size:clamp(1.9rem,4.3vw,3.5rem)}
+h3{font-family:var(--font-display);font-stretch:112%;font-weight:800;font-size:1.12rem;letter-spacing:.005em}
+@media (max-width:600px){.display{font-stretch:100%}}
+.eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 18px;font-family:var(--font-mono);font-size:.74rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--flare)}
+.eyebrow::before{content:"";width:26px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--slag),var(--flare))}
+.sub{margin:20px 0 0;max-width:62ch;color:var(--steel);font-size:1.08rem}
+.molten{background:linear-gradient(100deg,var(--slag) 0%,var(--ember) 18%,var(--flare) 34%,var(--white-hot) 42%,var(--flare) 50%,var(--ember) 66%,var(--slag) 84%,var(--slag) 100%);background-size:200% 100%;background-repeat:repeat-x;-webkit-background-clip:text;background-clip:text;color:transparent;animation:pour 7s linear infinite;filter:drop-shadow(0 0 22px var(--ember-40))}
+@keyframes pour{from{background-position:0% 50%}to{background-position:200% 50%}}
+.mono{font-family:var(--font-mono)}
+.tag{display:inline-block;font-family:var(--font-mono);font-size:.74rem;color:var(--flare);background:var(--ember-08);border:1px solid var(--seam-hot);padding:3px 9px;border-radius:999px;white-space:nowrap}
 
-html { scroll-behavior: smooth; }
+/* ── Buttons ──────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font:600 .96rem/1 var(--font-body);padding:15px 22px;border-radius:12px;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .2s ease,box-shadow .25s ease,border-color .2s ease,background .2s ease;white-space:nowrap}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-hot{color:#1c0b02;background:linear-gradient(180deg,var(--flare),var(--ember));box-shadow:0 12px 32px -10px var(--ember-60),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn-hot:hover{transform:translateY(-2px);box-shadow:0 18px 44px -10px var(--ember-60),0 0 0 4px var(--ember-14),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn-ghost{color:var(--ash);background:var(--iron-2);border-color:var(--seam)}
+.btn-ghost:hover{transform:translateY(-2px);border-color:var(--ember-40)}
+.btn-sm{padding:10px 14px;font-size:.88rem;border-radius:10px}
 
-body {
-  font-family: var(--font-body);
-  background: var(--bg-deep);
-  color: var(--text-primary);
-  line-height: 1.7;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+/* ── Nav ──────────────────────────────────────────────── */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--glass);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);border-bottom:1px solid var(--shine)}
+.nav .wrap{display:flex;align-items:center;gap:28px;height:66px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font-family:var(--font-display);font-weight:900;font-stretch:118%;font-size:1.06rem;letter-spacing:.01em}
+.brand small{display:block;font:500 .66rem/1 var(--font-mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-top:3px;font-stretch:100%}
+.nav-links{display:flex;gap:4px;margin-left:auto}
+.nav-links a{text-decoration:none;color:var(--steel);font-size:.92rem;font-weight:500;padding:8px 12px;border-radius:8px;transition:color .2s,background .2s}
+.nav-links a:hover{color:var(--ash);background:var(--shine)}
+.nav-cta{display:flex;gap:10px}
+@media (max-width:980px){.nav-links{display:none}.nav-cta{margin-left:auto}}
+@media (max-width:440px){.nav-cta .btn-ghost{display:none}}
 
-::selection { background: var(--accent); color: #000; }
+/* ── Hero ─────────────────────────────────────────────── */
+.hero{position:relative;isolation:isolate;overflow:clip;border-bottom:1px solid var(--shine)}
+.hero::before{content:"";position:absolute;inset:0;z-index:-2;background:
+  radial-gradient(70% 55% at 78% 30%,var(--ember-08),transparent 70%),
+  repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,255,255,.012) 22px 23px),
+  var(--ink)}
+.hero::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-38%;height:72%;z-index:-2;background:radial-gradient(55% 60% at 50% 100%,var(--ember-40),var(--ember-08) 55%,transparent 75%);animation:breathe 5.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.75;transform:scaleY(1)}50%{opacity:1;transform:scaleY(1.08)}}
+#embers{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(36px,5vw,64px);align-items:center;padding-block:clamp(56px,8vw,104px) clamp(40px,6vw,72px)}
+.hero-copy{min-width:0}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px 7px 10px;border-radius:999px;background:var(--iron-2);border:1px solid var(--seam);color:var(--steel);font-size:.84rem;text-decoration:none;margin-bottom:28px;transition:border-color .2s}
+.pill:hover{border-color:var(--ember-40);color:var(--ash)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--sev-low);box-shadow:0 0 0 0 rgba(63,220,154,.6);animation:ping 2s ease-out infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(63,220,154,.55)}100%{box-shadow:0 0 0 10px rgba(63,220,154,0)}}
+.lede{margin:26px 0 0;max-width:56ch;color:var(--steel);font-size:clamp(1.03rem,1.4vw,1.16rem)}
+.lede strong{color:var(--ash);font-weight:600}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 20px;margin:28px 0 0;padding:0;list-style:none;color:var(--dim);font:500 .8rem/1.4 var(--font-mono)}
+.facts li{display:flex;align-items:center;gap:8px}
+.facts li::before{content:"";width:6px;height:6px;transform:rotate(45deg);background:var(--ember)}
+@media (max-width:960px){.hero-grid{grid-template-columns:minmax(0,1fr)}}
 
-/* ─── Utility ─────────────────── */
-.container { max-width: 1120px; margin: 0 auto; padding: 0 2rem; }
-.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
+/* ── Terminal ─────────────────────────────────────────── */
+.term{position:relative;min-width:0;border-radius:16px;background:linear-gradient(180deg,var(--iron-2),var(--iron));border:1px solid var(--seam);box-shadow:0 40px 90px -30px var(--ember-40),0 0 0 1px var(--shine) inset;overflow:hidden}
+.term::after{content:"";position:absolute;left:12%;right:12%;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--ember),var(--flare),var(--ember),transparent);filter:blur(.5px);opacity:.9}
+.term-bar{display:flex;align-items:center;gap:14px;padding:10px 14px;border-bottom:1px solid var(--seam);background:rgba(255,255,255,.015)}
+.lights{display:flex;gap:7px;flex:none}
+.lights i{width:11px;height:11px;border-radius:50%;background:var(--seam)}
+.lights i:first-child{background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.term-tabs{display:flex;gap:4px;min-width:0}
+.term-tabs button{font:500 .78rem/1 var(--font-mono);color:var(--dim);background:none;border:1px solid transparent;padding:7px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.term-tabs button[aria-selected="true"]{color:var(--ash);background:var(--iron);border-color:var(--seam)}
+.term-status{margin-left:auto;display:flex;align-items:center;gap:8px;font:500 .74rem/1 var(--font-mono);color:var(--steel);white-space:nowrap}
+.term-status .dot{width:8px;height:8px;border-radius:50%;background:var(--sev-low)}
+.term-status.running .dot{background:var(--flare);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+.term-body{margin:0;height:430px;overflow:auto;padding:16px 18px 20px;font:400 .79rem/1.62 var(--font-mono);color:var(--steel);white-space:pre-wrap;word-break:break-word;scrollbar-width:thin;scrollbar-color:var(--seam) transparent}
+.term-body .ln{animation:lineIn .25s ease-out both}
+@keyframes lineIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.c-dim{color:var(--dim)}.c-ash{color:var(--ash)}.c-hot{color:var(--flare)}.c-ember{color:var(--ember)}.c-ok{color:var(--sev-low)}.c-q{color:var(--quench)}.c-warn{color:var(--sev-medium)}.c-bad{color:var(--sev-critical)}
+.c-box{color:var(--ember)}.c-steel{color:var(--steel)}
+.score-chip{display:inline-block;padding:0 6px;border-radius:5px;background:var(--ember-14);color:var(--flare);font-weight:700}
+.finish{display:inline-block;margin-top:2px;padding:2px 10px;border-radius:6px;font-weight:700;letter-spacing:.04em}
+.finish.ok{background:rgba(63,220,154,.12);color:var(--sev-low);box-shadow:0 0 24px rgba(63,220,154,.25)}
+.caret{display:inline-block;width:.55em;height:1.1em;vertical-align:-2px;background:var(--flare);animation:blink 1s steps(2) infinite}
+.spin::after{content:"⠋";display:inline-block;margin-left:6px;color:var(--quench);animation:spin 0.8s steps(8) infinite}
+@keyframes spin{0%{content:"⠋"}12%{content:"⠙"}25%{content:"⠹"}37%{content:"⠸"}50%{content:"⠼"}62%{content:"⠴"}75%{content:"⠦"}87%{content:"⠧"}}
+@media (max-width:600px){.term-body{height:360px;font-size:.72rem;padding:12px 12px 16px}.term-status{display:none}}
 
-/* ─── Grain overlay ───────────── */
-body::after {
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  background-size: 256px;
-}
+/* ── Stats strip ──────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-bottom:clamp(40px,6vw,64px);border-radius:var(--r);overflow:hidden;background:var(--seam);border:1px solid var(--seam)}
+.stat{background:var(--iron);padding:20px 22px}
+.stat b{display:block;font-family:var(--font-display);font-weight:900;font-stretch:125%;font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1;color:var(--ash);font-variant-numeric:tabular-nums}
+.stat b em{font-style:normal;color:var(--ember)}
+.stat span{display:block;margin-top:8px;color:var(--steel);font-size:.88rem}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-/* ─── Animations ──────────────── */
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-@keyframes pulse-glow { 0%,100%{opacity:.4} 50%{opacity:.9} }
-@keyframes slide-up { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
-@keyframes fade-in { from{opacity:0} to{opacity:1} }
-@keyframes glow-border { 0%,100%{border-color:var(--border)} 50%{border-color:var(--accent)} }
-@keyframes ember-drift {
-  0%{transform:translateY(0) scale(1);opacity:.8}
-  100%{transform:translateY(-120px) scale(0);opacity:0}
-}
-@keyframes typing { from{width:0} to{width:100%} }
-@keyframes blink { 50%{border-color:transparent} }
+/* ── Ribbon ───────────────────────────────────────────── */
+.ribbon{overflow:hidden;border-bottom:1px solid var(--shine);background:linear-gradient(90deg,var(--ink),var(--iron) 50%,var(--ink));padding-block:16px;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.ribbon-track{display:flex;width:max-content;gap:0;animation:slide 38s linear infinite}
+.ribbon-track span{font:600 .9rem/1 var(--font-mono);color:var(--steel);padding-inline:22px;display:flex;align-items:center;gap:44px;white-space:nowrap}
+.ribbon-track span::after{content:"";width:7px;height:7px;transform:rotate(45deg);background:var(--ember);box-shadow:0 0 12px var(--ember)}
+@keyframes slide{to{transform:translateX(-50%)}}
 
-.anim-slide { opacity:0; transform:translateY(40px); transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
-.anim-slide.visible { opacity:1; transform:translateY(0); }
+/* ── Sections ─────────────────────────────────────────── */
+.section{position:relative;padding-block:clamp(76px,10vw,132px)}
+.section.alt{background:linear-gradient(180deg,var(--iron) 0%,var(--ink) 100%);border-block:1px solid var(--shine)}
+.head{margin-bottom:clamp(40px,5vw,60px)}
+.head.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px 48px;align-items:end}
+.head.split .sub{margin:0}
+@media (max-width:860px){.head.split{grid-template-columns:minmax(0,1fr)}}
 
-/* ─── Header / Nav ────────────── */
-nav {
-  position: fixed; top:0; left:0; right:0; z-index:100;
-  background: rgba(8,9,12,0.85); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0.8rem 0;
+/* ── Flow ─────────────────────────────────────────────── */
+.flow{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr) minmax(0,1fr);gap:clamp(48px,8vw,120px);align-items:center}
+.flow-wires{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
+.flow-col{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+.flow-col h3{font:600 .72rem/1 var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;font-stretch:100%}
+.node{position:relative;padding:13px 15px;border-radius:12px;background:var(--iron-2);border:1px solid var(--seam);cursor:pointer;transition:border-color .25s,box-shadow .25s,background .25s,opacity .25s,transform .25s}
+.node strong{display:block;font-weight:600;font-size:.97rem}
+.node small{display:block;margin-top:3px;color:var(--dim);font:500 .74rem/1.45 var(--font-mono)}
+.node.an{padding:10px 14px;font:600 .86rem/1.2 var(--font-mono);color:var(--ash);display:flex;align-items:center;gap:10px}
+.node.an svg{width:18px;height:18px;color:var(--ember);flex:none}
+.node.key{border-color:var(--seam-hot);background:linear-gradient(180deg,var(--iron-2),var(--iron))}
+.node.key strong{color:var(--flare)}
+.flow.focus .node{opacity:.35}
+.flow.focus .node.lit{opacity:1;border-color:var(--ember);box-shadow:0 0 0 3px var(--ember-14),0 10px 30px -12px var(--ember-60)}
+.node:hover{border-color:var(--ember-40)}
+.wire-base{fill:none;stroke:var(--seam);stroke-width:1.4}
+.wire-flow{fill:none;stroke:var(--ember);stroke-width:1.6;stroke-dasharray:3 11;stroke-linecap:round;opacity:.55;animation:march 1.1s linear infinite}
+@keyframes march{to{stroke-dashoffset:-14}}
+.wire-dot{fill:var(--white-hot);filter:drop-shadow(0 0 5px var(--flare))}
+.flow.focus .wire{opacity:.12;transition:opacity .25s}
+.flow.focus .wire.hot{opacity:1}
+.flow.focus .wire.hot .wire-flow{stroke:var(--flare);opacity:1}
+.flow.focus .wire.hot .wire-base{stroke:var(--seam-hot)}
+.flow-hint{margin-top:26px;color:var(--dim);font:500 .8rem/1.4 var(--font-mono)}
+@media (max-width:899px){
+  .flow{grid-template-columns:minmax(0,1fr);gap:46px}
+  .flow-wires{display:none}
+  .flow-col:not(:last-child)::after{content:"";position:absolute;left:50%;bottom:-36px;width:2px;height:26px;transform:translateX(-50%);background:linear-gradient(var(--ember),transparent)}
+  .flow-col.mid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flow-col.mid h3{grid-column:1/-1}
 }
-nav .container {
-  display:flex; align-items:center; justify-content:space-between;
-}
-.nav-logo {
-  font-family: var(--font-display); font-size:1.5rem; color:var(--accent);
-  text-decoration:none; letter-spacing:-0.02em;
-}
-.nav-logo span { color: var(--text-primary); }
-.nav-links { display:flex; gap:2rem; list-style:none; }
-.nav-links a {
-  color:var(--text-secondary); text-decoration:none; font-size:0.88rem;
-  font-weight:400; transition: color 0.2s;
-}
-.nav-links a:hover { color:var(--text-primary); }
-.nav-cta {
-  background:var(--accent); color:#000; font-weight:600; font-size:0.85rem;
-  padding:0.5rem 1.2rem; border-radius:6px; text-decoration:none;
-  transition: all 0.25s; border:none; cursor:pointer;
-}
-.nav-cta:hover { background:var(--accent-glow); transform:translateY(-1px); box-shadow:0 4px 20px rgba(249,115,22,0.3); }
+@media (max-width:420px){.flow-col.mid{grid-template-columns:minmax(0,1fr)}}
 
-/* ─── Hero ────────────────────── */
-.hero {
-  min-height:100vh; display:flex; align-items:center; justify-content:center;
-  position:relative; padding:8rem 2rem 6rem; text-align:center;
-  overflow:hidden;
-}
-.hero-bg {
-  position:absolute; inset:0; z-index:0;
-  background:
-    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(249,115,22,0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 30% at 30% 60%, rgba(59,130,246,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 70% 70%, rgba(139,92,246,0.03) 0%, transparent 60%);
-}
-.hero-grid {
-  position:absolute; inset:0; z-index:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 70%);
-}
-.hero-content { position:relative; z-index:1; max-width:780px; }
-.hero-badge {
-  display:inline-flex; align-items:center; gap:0.5rem;
-  background:var(--bg-card); border:1px solid var(--border);
-  padding:0.4rem 1rem; border-radius:999px; font-size:0.78rem;
-  color:var(--text-secondary); margin-bottom:2rem;
-  animation: slide-up 0.6s ease-out;
-}
-.hero-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--teal); animation:pulse-glow 2s infinite; }
-.hero h1 {
-  font-family:var(--font-display); font-size:clamp(2.8rem,6vw,4.5rem);
-  line-height:1.1; font-weight:400; letter-spacing:-0.03em;
-  margin-bottom:1.5rem;
-  animation: slide-up 0.6s ease-out 0.1s both;
-}
-.hero h1 em { font-style:italic; color:var(--accent); }
-.hero-sub {
-  font-size:clamp(1rem,2vw,1.2rem); color:var(--text-secondary);
-  max-width:580px; margin:0 auto 2.5rem; line-height:1.8; font-weight:300;
-  animation: slide-up 0.6s ease-out 0.2s both;
-}
-.hero-actions {
-  display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;
-  animation: slide-up 0.6s ease-out 0.3s both;
-}
-.btn-primary {
-  background:var(--accent); color:#000; font-weight:600; font-size:0.95rem;
-  padding:0.85rem 2rem; border-radius:8px; text-decoration:none;
-  transition:all 0.25s; border:none; cursor:pointer; font-family:var(--font-body);
-}
-.btn-primary:hover { background:var(--accent-glow); transform:translateY(-2px); box-shadow:0 8px 30px rgba(249,115,22,0.25); }
-.btn-secondary {
-  background:transparent; color:var(--text-primary); font-weight:500;
-  font-size:0.95rem; padding:0.85rem 2rem; border-radius:8px;
-  text-decoration:none; transition:all 0.25s; border:1px solid var(--border);
-  font-family:var(--font-body);
-}
-.btn-secondary:hover { border-color:var(--text-muted); background:var(--bg-card); }
+/* ── Analyzer cards ───────────────────────────────────── */
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{--mx:50%;--my:0%;position:relative;display:flex;flex-direction:column;gap:12px;padding:24px 22px 20px;border-radius:var(--r);background:radial-gradient(420px circle at var(--mx) var(--my),var(--ember-14),transparent 45%),var(--iron);border:1px solid var(--seam);transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s;transform-style:preserve-3d;will-change:transform}
+.card:hover{border-color:var(--ember-40);box-shadow:0 26px 60px -30px var(--ember-60)}
+.card .ico{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--ember-08);border:1px solid var(--seam-hot);color:var(--flare)}
+.card .ico svg{width:22px;height:22px}
+.card p{margin:0;color:var(--steel);font-size:.93rem;line-height:1.6}
+.card .reads{margin-top:auto;padding-top:14px;border-top:1px dashed var(--seam);display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--dim);font:500 .74rem/1.3 var(--font-mono)}
+.card .reads b{color:var(--steel);font-weight:500;text-align:right}
 
-/* ─── Terminal Preview ────────── */
-.terminal-wrap {
-  margin-top:4rem; animation: slide-up 0.7s ease-out 0.5s both;
-}
-.terminal {
-  background:var(--bg-surface); border:1px solid var(--border);
-  border-radius:12px; overflow:hidden; text-align:left;
-  max-width:680px; margin:0 auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
-}
-.terminal-bar {
-  display:flex; align-items:center; gap:6px; padding:12px 16px;
-  background:var(--bg-card); border-bottom:1px solid var(--border);
-}
-.terminal-dot { width:10px; height:10px; border-radius:50%; }
-.terminal-dot:nth-child(1){background:#ef4444} .terminal-dot:nth-child(2){background:#f59e0b} .terminal-dot:nth-child(3){background:#22c55e}
-.terminal-title { margin-left:auto; font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono); }
-.terminal-body {
-  padding:1.2rem 1.5rem; font-family:var(--font-mono); font-size:0.8rem;
-  line-height:2; color:var(--text-secondary);
-}
-.terminal-body .accent { color:var(--accent); }
-.terminal-body .teal { color:var(--teal); }
-.terminal-body .blue { color:var(--blue); }
-.terminal-body .purple { color:var(--purple); }
-.terminal-body .dim { color:var(--text-muted); }
-.terminal-body .white { color:var(--text-primary); }
+/* ── Gate simulator ───────────────────────────────────── */
+.gate-grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:20px;align-items:start}
+@media (max-width:920px){.gate-grid{grid-template-columns:minmax(0,1fr)}}
+.panel{border-radius:16px;background:var(--iron);border:1px solid var(--seam);padding:22px}
+.ctl{display:flex;flex-direction:column;gap:10px;padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--seam)}
+.ctl label,.ctl .lbl{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:600;font-size:.94rem}
+.ctl output{font:700 1rem/1 var(--font-mono);color:var(--flare);min-width:2ch;text-align:right}
+.ctl .hint{margin:0;color:var(--dim);font-size:.82rem}
+input[type=range]{width:100%;accent-color:var(--ember);height:22px;background:transparent;cursor:pointer}
+select{width:100%;font:500 .9rem/1.3 var(--font-body);color:var(--ash);background:var(--iron-2);border:1px solid var(--seam);border-radius:10px;padding:11px 12px;cursor:pointer}
+.switch{cursor:pointer;justify-content:flex-start!important}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .track{position:relative;width:46px;height:26px;border-radius:999px;background:var(--seam);transition:background .25s;flex:none}
+.switch .track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--ash);transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
+.switch input:checked + .track{background:var(--ember)}
+.switch input:checked + .track::after{transform:translateX(20px)}
+.switch input:focus-visible + .track{outline:2px solid var(--flare);outline-offset:3px}
+.scores{border:0;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px}
+.scores legend{font-weight:600;font-size:.94rem;margin-bottom:10px;padding:0}
+.score-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 10px}
+.score-row label{font:500 .76rem/1.3 var(--font-mono);color:var(--steel);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-row output{font:700 .82rem/1 var(--font-mono);color:var(--ash);font-variant-numeric:tabular-nums}
+.score-row input{grid-column:1/-1}
+.score-row.off label,.score-row.off output{color:var(--sev-critical)}
+.score-row.warned label,.score-row.warned output{color:var(--sev-medium)}
+@media (max-width:460px){.scores{grid-template-columns:minmax(0,1fr)}}
+.verdict{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center;padding:20px;border-radius:14px;border:1px solid var(--seam);background:var(--iron-2);transition:border-color .3s,box-shadow .3s}
+.verdict.ok{border-color:rgba(63,220,154,.45);box-shadow:0 0 50px -18px rgba(63,220,154,.6)}
+.verdict.bad{border-color:rgba(255,75,75,.5);box-shadow:0 0 50px -18px rgba(255,75,75,.7)}
+.verdict.flash{animation:flash .5s ease-out}
+@keyframes flash{from{transform:scale(1.015)}to{transform:none}}
+.dial{position:relative;width:96px;height:96px}
+.dial svg{width:96px;height:96px;transform:rotate(-90deg)}
+.dial .track{fill:none;stroke:var(--seam);stroke-width:8}
+.dial .fill{fill:none;stroke:var(--ember);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1),stroke .3s}
+.dial b{position:absolute;inset:0;display:grid;place-items:center;font:900 1.55rem/1 var(--font-display);font-stretch:110%;font-variant-numeric:tabular-nums}
+.v-meta{display:flex;flex-direction:column;gap:8px;min-width:0}
+.v-label{font:500 .72rem/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.v-result{font:900 clamp(1.6rem,3vw,2.1rem)/1 var(--font-display);font-stretch:120%;letter-spacing:.02em}
+.verdict.ok .v-result{color:var(--sev-low)}.verdict.bad .v-result{color:var(--sev-critical)}
+.v-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--steel);font-size:.86rem}
+.chip{display:inline-block;padding:4px 10px;border-radius:999px;font:700 .72rem/1 var(--font-mono);letter-spacing:.06em;border:1px solid currentColor}
+.chip.ship{color:var(--sev-low)}.chip.caution{color:var(--sev-medium)}.chip.hold{color:var(--sev-high)}.chip.block{color:var(--sev-critical)}
+.mini-log{margin:16px 0 0;padding:16px;border-radius:12px;background:var(--ink);border:1px solid var(--seam);font:400 .75rem/1.65 var(--font-mono);color:var(--steel);white-space:pre-wrap;word-break:break-word;min-height:260px}
+.gate-note{margin:18px 0 0;color:var(--dim);font-size:.85rem}
+.gate-note code{color:var(--steel)}
 
-/* ─── Section shared ──────────── */
-section { padding:7rem 0; }
-.section-label {
-  font-family:var(--font-mono); font-size:0.72rem; text-transform:uppercase;
-  letter-spacing:0.15em; color:var(--accent); margin-bottom:0.8rem;
-}
-.section-title {
-  font-family:var(--font-display); font-size:clamp(2rem,4vw,3rem);
-  line-height:1.15; font-weight:400; letter-spacing:-0.02em;
-  margin-bottom:1rem;
-}
-.section-sub {
-  color:var(--text-secondary); font-size:1.05rem; max-width:560px;
-  line-height:1.8; font-weight:300;
-}
+/* ── Report ───────────────────────────────────────────── */
+.report-grid{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:clamp(32px,5vw,64px);align-items:center}
+@media (max-width:980px){.report-grid{grid-template-columns:minmax(0,1fr)}}
+.bands{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:10px}
+.bands li{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;gap:14px;font-size:.92rem;color:var(--steel)}
+.bands .chip{text-align:center}
+.window{border-radius:16px;overflow:hidden;border:1px solid var(--seam);background:var(--iron);box-shadow:0 50px 100px -40px var(--ember-40)}
+.window-bar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--seam);background:var(--iron-2)}
+.url{flex:1;min-width:0;padding:6px 12px;border-radius:8px;background:var(--ink);color:var(--dim);font:500 .74rem/1.3 var(--font-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rep{padding:22px}
+.rep-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--seam)}
+.rep-head h3{font-size:1rem}
+.rep-head h3 span{color:var(--ember)}
+.rep-head p{margin:4px 0 0;color:var(--dim);font:500 .72rem/1.4 var(--font-mono)}
+.example{font:600 .66rem/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);border:1px dashed var(--seam);padding:6px 8px;border-radius:6px}
+.kpis{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:12px;margin:18px 0;align-items:stretch}
+.kpi{padding:12px 14px;border-radius:12px;background:var(--iron-2);border:1px solid var(--seam);min-width:0}
+.kpi .l{font:500 .62rem/1.2 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.kpi .v{margin-top:6px;font:900 1.4rem/1 var(--font-display);font-stretch:110%;font-variant-numeric:tabular-nums}
+.ring{position:relative;width:104px;height:104px;align-self:center}
+.ring svg{width:104px;height:104px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:9}
+.ring .bg{stroke:var(--seam)}
+.ring .fg{stroke:url(#ringGrad);stroke-linecap:round}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font:900 1.6rem/1 var(--font-display);font-stretch:110%}
+.ring b small{display:block;font:500 .62rem/1 var(--font-mono);color:var(--dim);margin-top:3px;letter-spacing:.08em}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ring{grid-column:1/-1;justify-self:center}}
+.bars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 22px;padding:16px 0;border-block:1px solid var(--seam)}
+@media (max-width:640px){.bars{grid-template-columns:minmax(0,1fr)}}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;font:500 .74rem/1.2 var(--font-mono);color:var(--steel)}
+.bar b{color:var(--ash);font-variant-numeric:tabular-nums}
+.bar i{grid-column:1/-1;display:block;height:6px;border-radius:6px;background:var(--seam);overflow:hidden}
+.bar i::before{content:"";display:block;height:100%;width:var(--w);border-radius:inherit;background:var(--c);box-shadow:0 0 12px var(--c);transform-origin:left;transition:transform 1.1s cubic-bezier(.2,.8,.2,1)}
+.motion .bars.in .bar i::before{animation:grow 1.2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes grow{from{transform:scaleX(0)}}
+.findings{display:grid;gap:10px;margin-top:16px}
+.finding{padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.02);border-left:3px solid var(--c)}
+.finding h4{margin:0;font-size:.86rem;color:var(--c)}
+.finding p{margin:4px 0 0;color:var(--steel);font-size:.8rem}
+.finding .fix{margin-top:8px;padding:7px 10px;border-radius:7px;background:var(--quench-20);color:var(--ash);font-size:.78rem}
+.finding .where{color:var(--dim);font:500 .72rem/1.3 var(--font-mono);margin-top:4px}
 
-/* ─── Analyzers Grid ──────────── */
-.analyzers-grid {
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:1px; margin-top:3rem;
-  background:var(--border); border:1px solid var(--border); border-radius:16px;
-  overflow:hidden;
-}
-.analyzer-card {
-  background:var(--bg-surface); padding:2rem;
-  transition:all 0.3s;
-}
-.analyzer-card:hover { background:var(--bg-card-hover); }
-.analyzer-icon {
-  width:40px; height:40px; border-radius:10px; display:flex;
-  align-items:center; justify-content:center; font-size:1.2rem;
-  margin-bottom:1rem; border:1px solid;
-}
-.analyzer-card h3 {
-  font-family:var(--font-body); font-size:1rem; font-weight:600;
-  margin-bottom:0.5rem;
-}
-.analyzer-card p {
-  font-size:0.85rem; color:var(--text-secondary); line-height:1.7;
-}
-.analyzer-card .tag {
-  display:inline-block; margin-top:0.8rem; font-family:var(--font-mono);
-  font-size:0.68rem; color:var(--text-muted); background:var(--bg-deep);
-  padding:0.2rem 0.6rem; border-radius:4px;
-}
+/* ── Providers ────────────────────────────────────────── */
+.providers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.providers{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.providers{grid-template-columns:minmax(0,1fr)}}
+.prov{display:flex;flex-direction:column;gap:14px;padding:22px;border-radius:var(--r);background:var(--iron);border:1px solid var(--seam);transition:border-color .3s,transform .3s}
+.prov:hover{border-color:var(--ember-40);transform:translateY(-3px)}
+.prov p{margin:0;color:var(--steel);font-size:.92rem}
+.route{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;padding:14px 12px;border-radius:12px;background:var(--ink);border:1px solid var(--seam);font:600 .68rem/1.2 var(--font-mono);color:var(--steel)}
+.route .ep{padding:5px 8px;border-radius:6px;background:var(--iron-2);border:1px solid var(--seam);white-space:nowrap}
+.route .ep.m{color:var(--flare);border-color:var(--seam-hot)}
+.route .line{position:relative;height:2px;background:repeating-linear-gradient(90deg,var(--seam) 0 6px,transparent 6px 10px)}
+.route .line i{position:absolute;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--quench);box-shadow:0 0 10px var(--quench);animation:travel 2.2s ease-in-out infinite}
+.route .line i:nth-child(2){animation-delay:1.1s;background:var(--flare);box-shadow:0 0 10px var(--flare);animation-direction:reverse}
+@keyframes travel{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:calc(100% - 7px);opacity:0}}
+.route.local{border-style:dashed;border-color:var(--ember-40);padding-top:26px}
+.route.local::before{content:"your network";position:absolute;top:7px;left:12px;font:600 .58rem/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ember)}
+.specs{margin:0;display:grid;gap:7px;font-size:.84rem}
+.specs div{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px}
+.specs dt{color:var(--dim);font:500 .74rem/1.6 var(--font-mono)}
+.specs dd{margin:0;color:var(--ash);min-width:0;overflow-wrap:anywhere}
+.specs code{font-size:.8rem;color:var(--flare)}
 
-.icon-code { background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.2); color:#60a5fa; }
-.icon-shield { background:rgba(239,68,68,0.1); border-color:rgba(239,68,68,0.2); color:#f87171; }
-.icon-arch { background:rgba(139,92,246,0.1); border-color:rgba(139,92,246,0.2); color:#a78bfa; }
-.icon-test { background:rgba(20,184,166,0.1); border-color:rgba(20,184,166,0.2); color:#2dd4bf; }
-.icon-dep { background:rgba(245,158,11,0.1); border-color:rgba(245,158,11,0.2); color:#fbbf24; }
-.icon-commit { background:rgba(236,72,153,0.1); border-color:rgba(236,72,153,0.2); color:#f472b6; }
-.icon-pipe { background:rgba(34,197,94,0.1); border-color:rgba(34,197,94,0.2); color:#4ade80; }
-.icon-release { background:rgba(249,115,22,0.1); border-color:rgba(249,115,22,0.2); color:#fb923c; }
+/* ── Usage ────────────────────────────────────────────── */
+.usage-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:20px;align-items:start}
+@media (max-width:980px){.usage-grid{grid-template-columns:minmax(0,1fr)}}
+.code-card{border-radius:16px;background:var(--iron);border:1px solid var(--seam);overflow:hidden}
+.code-tabs{display:flex;align-items:center;gap:4px;padding:8px;border-bottom:1px solid var(--seam);background:var(--iron-2);overflow-x:auto}
+.code-tabs button{font:600 .82rem/1 var(--font-body);color:var(--steel);background:none;border:1px solid transparent;padding:9px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.code-tabs button[aria-selected="true"]{color:var(--ash);background:var(--iron);border-color:var(--seam);box-shadow:inset 0 -2px 0 var(--ember)}
+.copy{margin-left:auto;font:600 .76rem/1 var(--font-mono)!important;color:var(--dim)!important;border:1px solid var(--seam)!important}
+.copy:hover{color:var(--ash)!important}
+.code-card pre{margin:0;padding:20px 22px;overflow-x:auto;font:400 .82rem/1.7 var(--font-mono);color:var(--ash);tab-size:2}
+.t-com{color:var(--dim);font-style:italic}.t-str{color:#9fe08a}.t-num{color:var(--quench)}.t-kw{color:#c792ea}.t-step{color:var(--flare);font-weight:700}.t-dsl{color:#7fb7ff}
+.ret{display:grid;gap:16px}
+.ret .panel{padding:20px}
+.ret h3{font-size:.98rem;margin-bottom:12px}
+.ret h3 code{color:var(--flare);font-size:.9rem}
+.kv{margin:0;display:grid;gap:8px;font-size:.84rem}
+.kv div{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:12px;align-items:baseline}
+.kv dt{font:500 .78rem/1.4 var(--font-mono);color:var(--ash)}
+.kv dd{margin:0;color:var(--steel)}
 
-/* ─── Provider Logos ──────────── */
-.providers-section { border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
-.providers-row {
-  display:flex; justify-content:center; flex-wrap:wrap; gap:2.5rem;
-  margin-top:2.5rem;
-}
-.provider {
-  display:flex; flex-direction:column; align-items:center; gap:0.6rem;
-  padding:1.5rem 2rem; border-radius:12px;
-  border:1px solid var(--border); background:var(--bg-surface);
-  transition:all 0.3s; min-width:140px;
-}
-.provider:hover { border-color:var(--border-glow); background:var(--bg-card); transform:translateY(-3px); }
-.provider-icon { font-size:2rem; }
-.provider-name { font-size:0.85rem; font-weight:500; }
-.provider-tag { font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); }
+/* ── Install ──────────────────────────────────────────── */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:s}
+@media (max-width:900px){.steps{grid-template-columns:minmax(0,1fr)}}
+.steps li{position:relative;padding:26px 24px;border-radius:var(--r);background:var(--iron);border:1px solid var(--seam);overflow:hidden;counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;right:14px;top:-14px;font:900 6.5rem/1 var(--font-display);font-stretch:125%;color:transparent;-webkit-text-stroke:1px var(--seam-hot);opacity:.9}
+.steps h3{margin-bottom:10px}
+.steps p{margin:0;color:var(--steel);font-size:.93rem;position:relative}
+.steps code{font-size:.82rem;color:var(--flare)}
+.steps pre{position:relative;margin:14px 0 0;padding:12px 14px;border-radius:10px;background:var(--ink);border:1px solid var(--seam);font:400 .78rem/1.6 var(--font-mono);overflow-x:auto;color:var(--ash)}
 
-/* ─── Comparison Table ────────── */
-.comparison-section { background:var(--bg-surface); }
-.comparison-table {
-  width:100%; border-collapse:collapse; margin-top:2.5rem;
-  font-size:0.88rem;
-}
-.comparison-table th {
-  text-align:left; padding:1rem 1.2rem; font-weight:500;
-  color:var(--text-secondary); border-bottom:1px solid var(--border);
-  font-family:var(--font-mono); font-size:0.75rem;
-  text-transform:uppercase; letter-spacing:0.08em;
-}
-.comparison-table td {
-  padding:0.9rem 1.2rem; border-bottom:1px solid var(--border);
-  color:var(--text-secondary);
-}
-.comparison-table td:first-child { color:var(--text-primary); font-weight:500; }
-.comparison-table .yes { color:var(--teal); }
-.comparison-table .no { color:var(--text-muted); }
-.comparison-table tr:hover td { background:var(--bg-card); }
+/* ── Claude + CTA ─────────────────────────────────────── */
+.made{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center;padding:28px;border-radius:18px;background:linear-gradient(120deg,rgba(204,120,92,.12),transparent 60%),var(--iron);border:1px solid var(--seam)}
+.made svg{width:56px;height:56px}
+.made h3{font-size:1.2rem}
+.made p{margin:8px 0 0;color:var(--steel);max-width:70ch}
+.made a{color:var(--flare)}
+@media (max-width:600px){.made{grid-template-columns:minmax(0,1fr)}}
+.final{position:relative;isolation:isolate;overflow:clip;text-align:center;padding-block:clamp(90px,12vw,150px)}
+.final::before{content:"";position:absolute;inset:auto -20% -60% -20%;height:110%;z-index:-1;background:radial-gradient(50% 55% at 50% 100%,var(--ember-60),var(--ember-14) 50%,transparent 72%);animation:breathe 5s ease-in-out infinite}
+.final .display{font-size:clamp(2.2rem,6vw,4.8rem)}
+.final p{margin:22px auto 0;color:var(--steel);max-width:52ch}
+.final .cta-row{justify-content:center}
+footer{border-top:1px solid var(--shine);padding-block:28px;color:var(--dim);font-size:.86rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+footer nav{display:flex;flex-wrap:wrap;gap:6px 20px}
+footer a{text-decoration:none;color:var(--steel)}
+footer a:hover{color:var(--flare)}
 
-/* ─── Code Snippet ────────────── */
-.code-section .cols { display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:2.5rem; align-items:start; }
-.code-block {
-  background:var(--bg-surface); border:1px solid var(--border);
-  border-radius:12px; overflow:hidden;
-}
-.code-block-header {
-  padding:0.7rem 1rem; background:var(--bg-card);
-  border-bottom:1px solid var(--border);
-  font-family:var(--font-mono); font-size:0.72rem; color:var(--text-muted);
-}
-.code-block pre {
-  padding:1.2rem 1.5rem; font-family:var(--font-mono);
-  font-size:0.78rem; line-height:1.9; overflow-x:auto;
-  color:var(--text-secondary);
-}
-.code-block pre .kw { color:#c084fc; }
-.code-block pre .str { color:#fbbf24; }
-.code-block pre .fn { color:#60a5fa; }
-.code-block pre .cm { color:var(--text-muted); }
-.code-block pre .num { color:#f87171; }
-
-/* ─── Report Preview ──────────── */
-.report-preview {
-  margin-top:3rem; border:1px solid var(--border); border-radius:16px;
-  overflow:hidden; background:var(--bg-surface);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-.report-chrome {
-  padding:10px 16px; background:var(--bg-card);
-  border-bottom:1px solid var(--border);
-  display:flex; align-items:center; gap:6px;
-}
-.report-body { padding:2rem; }
-.report-kpis {
-  display:grid; grid-template-columns:repeat(4,1fr); gap:1rem;
-  margin-bottom:2rem;
-}
-.report-kpi {
-  padding:1rem; background:var(--bg-card); border-radius:10px;
-  border:1px solid var(--border);
-}
-.report-kpi .label { font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; font-family:var(--font-mono); }
-.report-kpi .value { font-size:1.6rem; font-weight:700; margin-top:0.3rem; }
-.report-bar {
-  height:6px; border-radius:3px; background:var(--bg-deep); margin-top:0.8rem;
-}
-.report-bar-fill { height:100%; border-radius:3px; transition: width 1.5s ease-out; }
-
-/* ─── Install Steps ───────────── */
-.install-steps {
-  display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; margin-top:3rem;
-}
-.install-step {
-  padding:2rem; background:var(--bg-surface); border:1px solid var(--border);
-  border-radius:14px; position:relative; transition:all 0.3s;
-}
-.install-step:hover { border-color:var(--border-glow); }
-.step-num {
-  font-family:var(--font-display); font-size:3rem; color:var(--accent);
-  opacity:0.2; position:absolute; top:1rem; right:1.2rem; line-height:1;
-}
-.install-step h3 { font-size:1rem; font-weight:600; margin-bottom:0.6rem; }
-.install-step p { font-size:0.85rem; color:var(--text-secondary); line-height:1.7; }
-.install-step code {
-  display:block; margin-top:0.8rem; background:var(--bg-deep);
-  padding:0.6rem 0.8rem; border-radius:6px; font-family:var(--font-mono);
-  font-size:0.75rem; color:var(--teal); overflow-x:auto;
-}
-
-/* ─── Built With Claude ───────── */
-.claude-section {
-  text-align:center;
-  background: linear-gradient(180deg, var(--bg-deep) 0%, rgba(139,92,246,0.04) 50%, var(--bg-deep) 100%);
-}
-.claude-badge {
-  display:inline-flex; align-items:center; gap:0.8rem;
-  background:var(--bg-card); border:1px solid rgba(139,92,246,0.3);
-  padding:1rem 2rem; border-radius:14px; margin-top:2rem;
-  transition:all 0.3s;
-}
-.claude-badge:hover { border-color:rgba(139,92,246,0.6); transform:translateY(-2px); }
-.claude-badge svg { width:32px; height:32px; }
-.claude-badge-text { text-align:left; }
-.claude-badge-text .top { font-size:0.75rem; color:var(--text-muted); }
-.claude-badge-text .bottom { font-size:0.95rem; font-weight:500; color:#c4b5fd; }
-
-/* ─── CTA / Footer ────────────── */
-.cta-section {
-  text-align:center;
-  background: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(249,115,22,0.08) 0%, transparent 70%);
-}
-.cta-section .section-title { margin-bottom:1.5rem; }
-
-footer {
-  padding:3rem 0; border-top:1px solid var(--border); text-align:center;
-}
-footer p { font-size:0.8rem; color:var(--text-muted); }
-footer a { color:var(--text-secondary); text-decoration:none; }
-footer a:hover { color:var(--accent); }
-
-/* ─── Responsive ──────────────── */
-@media(max-width:768px) {
-  .nav-links { display:none; }
-  .code-section .cols { grid-template-columns:1fr; }
-  .install-steps { grid-template-columns:1fr; }
-  .report-kpis { grid-template-columns:repeat(2,1fr); }
-  .comparison-table { font-size:0.78rem; }
-  .comparison-table th, .comparison-table td { padding:0.6rem 0.8rem; }
+/* ── Motion ───────────────────────────────────────────── */
+.motion .rv{transform:translateY(26px);transition:transform .9s cubic-bezier(.2,.75,.2,1);transition-delay:var(--d,0s)}
+.motion .rv.in{transform:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 </style>
 </head>
 <body>
 
-<!-- ════════════ NAV ════════════ -->
-<nav>
-<div class="container">
-  <a href="#" class="nav-logo">Forge<span>AI</span></a>
-  <ul class="nav-links">
-    <li><a href="#analyzers">Analyzers</a></li>
-    <li><a href="#providers">Providers</a></li>
-    <li><a href="#comparison">Why ForgeAI</a></li>
-    <li><a href="#quickstart">Quick Start</a></li>
-    <li><a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin" target="_blank">GitHub</a></li>
-  </ul>
-  <a href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" class="nav-cta" target="_blank">Plugin Site</a>
-</div>
-</nav>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="fGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb547"/><stop offset="1" stop-color="#ff6b1a"/></linearGradient>
+    <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb547"/><stop offset="1" stop-color="#ff6b1a"/></linearGradient>
+    <symbol id="logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#141922"/><rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="none" stroke="#5a2d12"/><rect x="9" y="6" width="3.6" height="19" rx="1.5" fill="url(#fGrad)"/><rect x="9" y="6" width="14.5" height="3.6" rx="1.5" fill="url(#fGrad)"/><rect x="9" y="13.4" width="10.5" height="3.1" rx="1.5" fill="url(#fGrad)"/><rect x="6" y="27" width="20" height="2.2" rx="1.1" fill="url(#fGrad)"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/><path d="M17.5 17.8l3.5 3.2"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+    <symbol id="i-graph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.2 8.3l3.6 7.4M16.8 8.3l-3.6 7.4M8.5 6h7"/></symbol>
+    <symbol id="i-commit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.5"/><path d="M2 12h6.5M15.5 12H22"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 17a8.5 8.5 0 1 1 17 0"/><path d="M12 17l4.5-5.5"/><circle cx="12" cy="17" r="1.2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h12l-2.5 4.5L17 13H5"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></symbol>
+    <symbol id="i-plug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5M9 8V2M15 8V2M6 8h12v3a6 6 0 0 1-12 0V8z"/></symbol>
+  </defs>
+</svg>
 
-<!-- ════════════ HERO ════════════ -->
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-grid"></div>
-  <div class="hero-content">
-    <div class="hero-badge"><span class="dot"></span> Open Source &middot; MIT License &middot; Now on Jenkins Update Center</div>
-    <h1>AI-powered <em>pipeline intelligence</em> for Jenkins</h1>
-    <p class="hero-sub">
-      8 specialized analyzers for code review, vulnerability scanning,
-      architecture drift detection, and release readiness — directly in your CI/CD pipeline.
-    </p>
-    <div class="hero-actions">
-      <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin" class="btn-primary" target="_blank">View on GitHub</a>
-      <a href="#quickstart" class="btn-secondary">Quick Start Guide</a>
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="ForgeAI home">
+      <svg width="32" height="32" aria-hidden="true"><use href="#logo"/></svg>
+      <span>ForgeAI<small>Pipeline Intelligence</small></span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#analyzers">Analyzers</a>
+      <a href="#gate">Quality gate</a>
+      <a href="#providers">Providers</a>
+      <a href="#usage">Usage</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+      <a class="btn btn-hot btn-sm" href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" target="_blank" rel="noopener">Install</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ═════════════ HERO ═════════════ -->
+<section class="hero" id="hero">
+  <canvas id="embers" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <a class="pill" href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" target="_blank" rel="noopener"><span class="pulse" aria-hidden="true"></span>Available on the Jenkins Update Center</a>
+        <h1 class="display">Every build,<br><span class="molten">forged</span> into a verdict.</h1>
+        <p class="lede">ForgeAI puts <strong>eight AI analyzers</strong> inside your Jenkins pipeline. They review the code, hunt vulnerabilities, check the architecture, find test gaps, rate dependencies, read your commits and tune your Jenkinsfile. Then <strong>one composite score decides whether the build ships.</strong></p>
+        <div class="cta-row">
+          <a class="btn btn-hot" href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" target="_blank" rel="noopener">Install from Update Center
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn-ghost" href="#gate">Try the quality gate</a>
+        </div>
+        <ul class="facts">
+          <li>Jenkins 2.528.3+</li>
+          <li>MIT licensed</li>
+          <li>OpenAI · Claude · Ollama</li>
+        </ul>
+      </div>
+
+      <div class="term" id="term">
+        <div class="term-bar">
+          <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="term-tabs" role="tablist" aria-label="Build view">
+            <button type="button" role="tab" id="tab-jf" aria-controls="pane-jf" aria-selected="false">Jenkinsfile</button>
+            <button type="button" role="tab" id="tab-log" aria-controls="pane-log" aria-selected="true">Console Output</button>
+          </div>
+          <div class="term-status" id="termStatus"><span class="dot"></span><span id="termStatusText">payments-service #128 · Success</span></div>
+        </div>
+        <pre class="term-body" id="pane-jf" role="tabpanel" aria-labelledby="tab-jf" hidden></pre>
+        <div class="term-body" id="pane-log" role="tabpanel" aria-labelledby="tab-log" aria-live="off"></div>
+      </div>
     </div>
 
-    <div class="terminal-wrap">
-      <div class="terminal">
-        <div class="terminal-bar">
-          <span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span>
-          <span class="terminal-title">Jenkinsfile</span>
+    <div class="stats rv">
+      <div class="stat"><b data-count="8">8</b><span>specialist analyzers</span></div>
+      <div class="stat"><b data-count="3">3</b><span>provider types, plus your own</span></div>
+      <div class="stat"><b data-count="60" data-suffix="K">60K</b><span>characters of source per analysis</span></div>
+      <div class="stat"><b><em>1</em></b><span>composite score gates the release</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="ribbon" aria-hidden="true">
+  <div class="ribbon-track">
+    <span>code-review</span><span>vulnerability</span><span>architecture-drift</span><span>test-gaps</span><span>dependency-risk</span><span>commit-intel</span><span>pipeline-advisor</span><span>release-readiness</span>
+    <span>code-review</span><span>vulnerability</span><span>architecture-drift</span><span>test-gaps</span><span>dependency-risk</span><span>commit-intel</span><span>pipeline-advisor</span><span>release-readiness</span>
+  </div>
+</div>
+
+<!-- ═════════════ HOW IT WORKS ═════════════ -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow">Inside the forgeAI step</p>
+        <h2 class="display">Four inputs.<br>Eight analyzers.<br>One verdict.</h2>
+      </div>
+      <p class="sub">Each analyzer reads only what it needs from the workspace. Release Readiness then weighs every result, the step averages the scores, and your threshold decides the build. Select any box to trace its path.</p>
+    </div>
+
+    <div class="flow rv" id="flow">
+      <svg class="flow-wires" id="flowWires" aria-hidden="true"></svg>
+      <div class="flow-col">
+        <h3>From your workspace</h3>
+        <div class="node" tabindex="0" data-node="src"><strong>Source files</strong><small>sourceGlob · whole files up to 60,000 characters</small></div>
+        <div class="node" tabindex="0" data-node="jf"><strong>Jenkinsfile</strong><small>Jenkinsfile or .jenkins/Jenkinsfile</small></div>
+        <div class="node" tabindex="0" data-node="mf"><strong>Dependency manifests</strong><small>pom.xml · build.gradle · package.json · go.mod · Cargo.toml · 5 more</small></div>
+        <div class="node" tabindex="0" data-node="git"><strong>Git history</strong><small>last 20 commits + HEAD diff</small></div>
+      </div>
+      <div class="flow-col mid">
+        <h3>Analyzers</h3>
+        <div class="node an" tabindex="0" data-node="code-review" data-in="src"><svg aria-hidden="true"><use href="#i-code"/></svg>code-review</div>
+        <div class="node an" tabindex="0" data-node="vulnerability" data-in="src"><svg aria-hidden="true"><use href="#i-shield"/></svg>vulnerability</div>
+        <div class="node an" tabindex="0" data-node="architecture-drift" data-in="src"><svg aria-hidden="true"><use href="#i-layers"/></svg>architecture-drift</div>
+        <div class="node an" tabindex="0" data-node="test-gaps" data-in="src"><svg aria-hidden="true"><use href="#i-target"/></svg>test-gaps</div>
+        <div class="node an" tabindex="0" data-node="pipeline-advisor" data-in="jf"><svg aria-hidden="true"><use href="#i-gauge"/></svg>pipeline-advisor</div>
+        <div class="node an" tabindex="0" data-node="dependency-risk" data-in="mf"><svg aria-hidden="true"><use href="#i-graph"/></svg>dependency-risk</div>
+        <div class="node an" tabindex="0" data-node="commit-intel" data-in="git"><svg aria-hidden="true"><use href="#i-commit"/></svg>commit-intel</div>
+      </div>
+      <div class="flow-col">
+        <h3>Verdict</h3>
+        <div class="node key" tabindex="0" data-node="rr" data-in="code-review vulnerability architecture-drift test-gaps pipeline-advisor dependency-risk commit-intel"><strong>release-readiness</strong><small>weighs every result before it</small></div>
+        <div class="node key" tabindex="0" data-node="gate" data-in="rr"><strong>Composite score → quality gate</strong><small>average of all scores vs. your threshold</small></div>
+        <div class="node key" tabindex="0" data-node="out" data-in="gate"><strong>Report + return values</strong><small>forgeai-report.html · compositeScore · failedAnalyzers</small></div>
+      </div>
+    </div>
+    <p class="flow-hint">● ForgeAI makes one LLM call per analyzer and parses the JSON it returns into a 1–10 score and findings.</p>
+  </div>
+</section>
+
+<!-- ═════════════ ANALYZERS ═════════════ -->
+<section class="section alt" id="analyzers">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow">Analyzers</p>
+        <h2 class="display">Eight specialists on every build.</h2>
+      </div>
+      <p class="sub">Each analyzer runs with its own expert system prompt and returns a 1–10 score plus findings with a severity, the file and line, and a concrete fix. Turn any of them off globally in Manage Jenkins.</p>
+    </div>
+    <div class="cards">
+      <article class="card rv" style="--d:0s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-code"/></svg></div>
+        <h3>AI Code Review</h3><span class="tag">code-review</span>
+        <p>Correctness, performance, readability, SOLID and DRY violations, error handling, naming and anti-patterns.</p>
+        <div class="reads">Reads <b>Source files</b></div>
+      </article>
+      <article class="card rv" style="--d:.06s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-shield"/></svg></div>
+        <h3>Vulnerability Analysis</h3><span class="tag">vulnerability</span>
+        <p>OWASP Top 10, hardcoded secrets, injection, path traversal, weak crypto, SSRF and unsafe deserialization, each mapped to a CWE ID.</p>
+        <div class="reads">Reads <b>Source files</b></div>
+      </article>
+      <article class="card rv" style="--d:.12s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-layers"/></svg></div>
+        <h3>Architecture Drift</h3><span class="tag">architecture-drift</span>
+        <p>Works out your intended architecture, then flags layer violations, circular dependencies, god classes and leaking API boundaries.</p>
+        <div class="reads">Reads <b>Source files</b></div>
+      </article>
+      <article class="card rv" style="--d:.18s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-target"/></svg></div>
+        <h3>Test Gap Analysis</h3><span class="tag">test-gaps</span>
+        <p>Finds untested paths, missing boundary and error-case tests, and tests that assert nothing, then describes the tests to add.</p>
+        <div class="reads">Reads <b>Source files</b></div>
+      </article>
+      <article class="card rv" style="--d:0s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-graph"/></svg></div>
+        <h3>Dependency Risk</h3><span class="tag">dependency-risk</span>
+        <p>Unpinned versions, copyleft license conflicts, unmaintained packages, duplicate libraries and deep transitive trees.</p>
+        <div class="reads">Reads <b>Manifests</b></div>
+      </article>
+      <article class="card rv" style="--d:.06s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-commit"/></svg></div>
+        <h3>Commit Intelligence</h3><span class="tag">commit-intel</span>
+        <p>Rates commit message quality and change cohesion, and catches breaking changes that nobody announced.</p>
+        <div class="reads">Reads <b>Git history</b></div>
+      </article>
+      <article class="card rv" style="--d:.12s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-gauge"/></svg></div>
+        <h3>Pipeline Advisor</h3><span class="tag">pipeline-advisor</span>
+        <p>Reviews your Jenkinsfile for stages that could run in parallel, missing caches, absent timeouts and retries, and unsafe secret handling.</p>
+        <div class="reads">Reads <b>Jenkinsfile</b></div>
+      </article>
+      <article class="card rv" style="--d:.18s">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-flag"/></svg></div>
+        <h3>Release Readiness</h3><span class="tag">release-readiness</span>
+        <p>Weighs every other result, security 3× and architecture 2×, into a release verdict and names the issues that should block it.</p>
+        <div class="reads">Reads <b>All prior results</b></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ QUALITY GATE ═════════════ -->
+<section class="section" id="gate">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow">Quality gate</p>
+        <h2 class="display">Ship on a score. Fail when the analysis fails.</h2>
+      </div>
+      <p class="sub">Set a threshold, drag the scores, then break something. The result and the log lines follow the same rules as the <code class="mono">forgeAI</code> step.</p>
+    </div>
+
+    <div class="gate-grid">
+      <form class="panel" id="gateForm" autocomplete="off">
+        <div class="ctl">
+          <label class="switch" for="gateOn"><input type="checkbox" id="gateOn" checked><span class="track" aria-hidden="true"></span><span>Fail build on low score</span></label>
+          <p class="hint">Global setting in Manage Jenkins, or <code class="mono">failOnCritical</code> on the step.</p>
         </div>
-        <div class="terminal-body">
-          <span class="dim">// one step — eight dimensions of intelligence</span><br>
-          <span class="purple">def</span> <span class="white">report</span> = <span class="accent">forgeAI</span>(<br>
-          &nbsp;&nbsp;analyzers: [<span class="teal">'code-review'</span>, <span class="teal">'vulnerability'</span>, <span class="teal">'architecture-drift'</span>],<br>
-          &nbsp;&nbsp;sourceGlob: <span class="teal">'src/**/*.java'</span>,<br>
-          &nbsp;&nbsp;failOnCritical: <span class="blue">true</span><br>
-          )<br>
-          <span class="dim">// → compositeScore: 7.8/10 | verdict: SHIP_IT</span>
+        <div class="ctl">
+          <label for="gateThreshold">Score threshold <output id="gateThresholdOut" for="gateThreshold">6</output></label>
+          <input type="range" id="gateThreshold" min="1" max="10" step="1" value="6">
+        </div>
+        <div class="ctl">
+          <label for="gateFault">Simulate a failure</label>
+          <select id="gateFault">
+            <option value="none">Nothing fails</option>
+            <option value="outage">vulnerability · LLM answers HTTP 503 three times</option>
+            <option value="garbled">code-review · reply is not valid JSON</option>
+          </select>
+        </div>
+        <fieldset class="scores" id="gateScores">
+          <legend>Scores the LLM returns</legend>
+        </fieldset>
+      </form>
+
+      <div class="panel">
+        <div class="verdict ok" id="gateVerdict">
+          <div class="dial" aria-hidden="true">
+            <svg viewBox="0 0 96 96"><circle class="track" cx="48" cy="48" r="40"/><circle class="fill" id="gateDial" cx="48" cy="48" r="40" stroke-dasharray="251.33" stroke-dashoffset="43.98"/></svg>
+            <b id="gateComposite">8.3</b>
+          </div>
+          <div class="v-meta">
+            <span class="v-label">Build result</span>
+            <span class="v-result" id="gateResult">SUCCESS</span>
+            <span class="v-row">Report verdict <span class="chip ship" id="gateChip">SHIP IT</span></span>
+          </div>
+        </div>
+        <pre class="mini-log" id="gateLog" aria-live="polite"></pre>
+        <p class="gate-note">Pipelines inherit the global gate settings unless they pass <code>failOnCritical</code> or <code>criticalThreshold</code>. An analyzer that errors or returns unreadable output fails a gated build. It never passes as a neutral score.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ REPORT ═════════════ -->
+<section class="section alt" id="report">
+  <div class="wrap report-grid">
+    <div>
+      <p class="eyebrow">Report</p>
+      <h2 class="display">Every build leaves a report.</h2>
+      <p class="sub">ForgeAI writes a self-contained HTML report to <code class="mono">forgeai-reports/forgeai-report.html</code>: the composite score, a verdict, each analyzer's score and every finding with its file, line and suggested fix. Archive it, or publish it on the build page with the HTML Publisher plugin.</p>
+      <ul class="bands">
+        <li><span class="chip ship">SHIP IT</span>Composite score of 8 or more</li>
+        <li><span class="chip caution">CAUTION</span>6 to 7.9</li>
+        <li><span class="chip hold">HOLD</span>4 to 5.9</li>
+        <li><span class="chip block">BLOCK</span>Below 4</li>
+      </ul>
+    </div>
+
+    <div class="window rv">
+      <div class="window-bar">
+        <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="url">job/payments-service/128/artifact/forgeai-reports/forgeai-report.html</div>
+      </div>
+      <div class="rep">
+        <div class="rep-head">
+          <div>
+            <h3><span>ForgeAI</span> Pipeline Intelligence Report</h3>
+            <p>payments-service • Build #128 • 2026-10-28 14:02:11 UTC</p>
+          </div>
+          <span class="example">Example report</span>
+        </div>
+        <div class="kpis">
+          <div class="ring" id="ring">
+            <svg viewBox="0 0 104 104" aria-hidden="true"><circle class="bg" cx="52" cy="52" r="44"/><circle class="fg" id="ringFg" cx="52" cy="52" r="44" stroke-dasharray="276.46" stroke-dashoffset="48.38"/></svg>
+            <b><span data-count="8.3" data-decimals="1">8.3</span><small>/ 10</small></b>
+          </div>
+          <div class="kpi"><div class="l">Verdict</div><div class="v" style="color:var(--sev-low)">SHIP IT</div></div>
+          <div class="kpi"><div class="l">Total findings</div><div class="v" data-count="19">19</div></div>
+          <div class="kpi"><div class="l">Critical / High</div><div class="v" style="color:var(--sev-critical)">0 / 3</div></div>
+          <div class="kpi"><div class="l">Analyzers run</div><div class="v" data-count="8">8</div></div>
+        </div>
+        <div class="bars" id="bars">
+          <div class="bar">AI Code Review<b>9/10</b><i style="--w:90%;--c:var(--sev-low)"></i></div>
+          <div class="bar">Vulnerability<b>8/10</b><i style="--w:80%;--c:var(--sev-low)"></i></div>
+          <div class="bar">Architecture Drift<b>9/10</b><i style="--w:90%;--c:var(--sev-low)"></i></div>
+          <div class="bar">Test Gaps<b>7/10</b><i style="--w:70%;--c:var(--sev-medium)"></i></div>
+          <div class="bar">Dependency Risk<b>8/10</b><i style="--w:80%;--c:var(--sev-low)"></i></div>
+          <div class="bar">Commit Intelligence<b>9/10</b><i style="--w:90%;--c:var(--sev-low)"></i></div>
+          <div class="bar">Pipeline Advisor<b>8/10</b><i style="--w:80%;--c:var(--sev-low)"></i></div>
+          <div class="bar">Release Readiness<b>8/10</b><i style="--w:80%;--c:var(--sev-low)"></i></div>
+        </div>
+        <div class="findings">
+          <div class="finding" style="--c:var(--sev-high)">
+            <h4>[HIGH] SQL query built by string concatenation</h4>
+            <p>The order lookup appends a request parameter straight into the WHERE clause (CWE-89).</p>
+            <div class="where">📄 src/main/java/com/acme/pay/OrderRepository.java (line 87)</div>
+            <div class="fix">💡 Use a PreparedStatement and bind <code>customerId</code> as a parameter.</div>
+          </div>
+          <div class="finding" style="--c:var(--sev-medium)">
+            <h4>[MEDIUM] Discount rules live in the controller</h4>
+            <p>PricingController calculates discounts, so the web layer now owns business logic.</p>
+            <div class="where">📄 src/main/java/com/acme/pay/web/PricingController.java (line 42)</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ════════════ ANALYZERS ════════════ -->
-<section id="analyzers">
-<div class="container">
-  <div class="anim-slide">
-    <div class="section-label">Analyzers</div>
-    <div class="section-title">Eight dimensions of code intelligence</div>
-    <div class="section-sub">Each analyzer uses a purpose-built, expert-level system prompt — not a generic wrapper. They understand your architecture, your tests, your dependencies.</div>
-  </div>
-
-  <div class="analyzers-grid anim-slide">
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-code">&#60;/&#62;</div>
-      <h3>AI Code Review</h3>
-      <p>Evaluates correctness, performance, SOLID principles, DRY violations, error handling, naming, and anti-patterns — with line-level suggestions and a 1–10 quality score.</p>
-      <span class="tag">code-review</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-shield">&#9632;</div>
-      <h3>Vulnerability Analysis</h3>
-      <p>Detects OWASP Top 10, hardcoded secrets, SQL/command injection, unsafe deserialization, and SSRF — with CWE ID mapping and specific remediation steps per finding.</p>
-      <span class="tag">vulnerability</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-arch">&#9674;</div>
-      <h3>Architecture Drift</h3>
-      <p>Detects layer violations, circular deps, coupling drift, and API boundary erosion across hexagonal, layered, CQRS, event-driven, and microservice patterns.</p>
-      <span class="tag">architecture-drift</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-test">&#10003;</div>
-      <h3>Test Gap Analysis</h3>
-      <p>Finds untested code paths, missing unit/integration/contract tests, race conditions, and boundary gaps — suggests concrete test cases with pseudo-code.</p>
-      <span class="tag">test-gaps</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-dep">&#9881;</div>
-      <h3>Dependency Risk</h3>
-      <p>Flags GPL/license conflicts, unmaintained packages, unpinned versions, and transitive depth risk — scored 1–10 with supply-chain risk ranking.</p>
-      <span class="tag">dependency-risk</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-commit">&#10070;</div>
-      <h3>Commit Intelligence</h3>
-      <p>Scores commit hygiene and Conventional Commits compliance, detects breaking changes, generates changelog entries, and recommends patch/minor/major semver bumps.</p>
-      <span class="tag">commit-intel</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-pipe">&#9654;</div>
-      <h3>Pipeline Advisor</h3>
-      <p>Analyzes your Jenkinsfile directly — finds parallelization wins, missing caches, secret handling issues, failure resilience gaps, and estimates the % build-time reduction achievable.</p>
-      <span class="tag">pipeline-advisor</span>
-    </div>
-    <div class="analyzer-card">
-      <div class="analyzer-icon icon-release">&#9733;</div>
-      <h3>Release Readiness</h3>
-      <p>Synthesizes all analyzers with weighted scoring (security 3×, architecture 2×) into a final verdict — SHIP IT, CAUTION, HOLD, or BLOCK — plus a technical debt estimate in hours.</p>
-      <span class="tag">release-readiness</span>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ════════════ PROVIDERS ════════════ -->
-<section id="providers" class="providers-section">
-<div class="container" style="text-align:center">
-  <div class="anim-slide">
-    <div class="section-label">LLM Providers</div>
-    <div class="section-title" style="margin-left:auto;margin-right:auto">Use any model. Cloud or local. Your choice.</div>
-    <div class="section-sub" style="margin:0.8rem auto 0">ForgeAI is provider-agnostic. Plug in OpenAI, Anthropic Claude, or run fully air-gapped with Ollama — no data ever leaves your network.</div>
-  </div>
-
-  <div class="providers-row anim-slide">
-    <div class="provider">
-      <div class="provider-icon">&#9679;</div>
-      <div class="provider-name">OpenAI</div>
-      <div class="provider-tag">GPT-4o / GPT-4o-mini</div>
-    </div>
-    <div class="provider">
-      <div class="provider-icon">&#9670;</div>
-      <div class="provider-name">Anthropic</div>
-      <div class="provider-tag">claude-opus-4-7 / claude-sonnet-4-6</div>
-    </div>
-    <div class="provider">
-      <div class="provider-icon">&#11044;</div>
-      <div class="provider-name">Ollama</div>
-      <div class="provider-tag">DeepSeek / CodeLlama</div>
-    </div>
-    <div class="provider">
-      <div class="provider-icon">&#9635;</div>
-      <div class="provider-name">Groq</div>
-      <div class="provider-tag">Llama 3.3 / GPT-OSS</div>
-    </div>
-    <div class="provider">
-      <div class="provider-icon">&#9645;</div>
-      <div class="provider-name">LM Studio</div>
-      <div class="provider-tag">Any GGUF model</div>
-    </div>
-    <div class="provider">
-      <div class="provider-icon">&#9881;</div>
-      <div class="provider-name">Custom</div>
-      <div class="provider-tag">Any OpenAI-compatible</div>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ════════════ COMPARISON ════════════ -->
-<section id="comparison" class="comparison-section">
-<div class="container">
-  <div class="anim-slide">
-    <div class="section-label">Why ForgeAI</div>
-    <div class="section-title">Not another ChatGPT wrapper</div>
-    <div class="section-sub">Purpose-built for CI/CD pipelines with capabilities no other plugin offers.</div>
-  </div>
-
-  <div class="anim-slide" style="overflow-x:auto">
-    <table class="comparison-table">
-      <thead>
-        <tr>
-          <th>Capability</th>
-          <th>ForgeAI</th>
-          <th>Typical AI plugins</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Architecture drift detection</td><td class="yes">&#10003; Pattern-aware</td><td class="no">&#10005; Code-level only</td></tr>
-        <tr><td>Composite release scoring</td><td class="yes">&#10003; Weighted (security 3×, arch 2×)</td><td class="no">&#10005; Single-dimension</td></tr>
-        <tr><td>Pipeline self-optimization</td><td class="yes">&#10003; Analyzes Jenkinsfile itself</td><td class="no">&#10005; Not available</td></tr>
-        <tr><td>Air-gapped local LLM</td><td class="yes">&#10003; Ollama, LM Studio, vLLM</td><td class="no">&#10005; Cloud-only</td></tr>
-        <tr><td>Multi-provider support</td><td class="yes">&#10003; OpenAI + Claude + Ollama + Groq</td><td class="no">&#10005; Single vendor lock-in</td></tr>
-        <tr><td>Quality gate verdicts</td><td class="yes">&#10003; SHIP_IT / CAUTION / HOLD / BLOCK</td><td class="no">&#10005; Pass/fail only</td></tr>
-        <tr><td>Supply-chain risk analysis</td><td class="yes">&#10003; License + maintenance + depth</td><td class="no">&#10005; CVE-only</td></tr>
-        <tr><td>Auto changelog + semver</td><td class="yes">&#10003; From commit intelligence</td><td class="no">&#10005; Not available</td></tr>
-        <tr><td>Admin GUI with test button</td><td class="yes">&#10003; Full Jenkins config UI</td><td class="no">&#10005; Config-as-code only</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-</section>
-
-<!-- ════════════ CODE EXAMPLES ════════════ -->
-<section id="code" class="code-section">
-<div class="container">
-  <div class="anim-slide">
-    <div class="section-label">Usage</div>
-    <div class="section-title">Two steps. Infinite flexibility.</div>
-  </div>
-
-  <div class="cols anim-slide">
-    <div class="code-block">
-      <div class="code-block-header">Full Suite — Jenkinsfile</div>
-      <pre><span class="kw">def</span> report = <span class="fn">forgeAI</span>(
-  analyzers: [
-    <span class="str">'code-review'</span>, <span class="str">'vulnerability'</span>,
-    <span class="str">'architecture-drift'</span>, <span class="str">'test-gaps'</span>,
-    <span class="str">'dependency-risk'</span>, <span class="str">'release-readiness'</span>
-  ],
-  sourceGlob: <span class="str">'src/**/*.java'</span>,
-  contextInfo: <span class="str">'Spring Boot, hexagonal arch'</span>,
-  failOnCritical: <span class="num">true</span>,
-  criticalThreshold: <span class="num">4</span>
-)
-echo <span class="str">"Score: ${report.compositeScore}/10"</span>
-echo <span class="str">"Security: ${report['vulnerability-Score']}"</span></pre>
-    </div>
-    <div class="code-block">
-      <div class="code-block-header">Targeted Scan — Single Analyzer</div>
-      <pre><span class="kw">def</span> sec = <span class="fn">forgeAIScan</span>(
-  <span class="str">'vulnerability'</span>,
-  source: <span class="fn">readFile</span>(<span class="str">'src/App.java'</span>),
-  context: <span class="str">'Java 17 REST API, PII data'</span>
-)
-<span class="cm">// returns: score, severity, summary,</span>
-<span class="cm">// findingsCount, criticalCount, highCount</span>
-<span class="kw">if</span> (sec.criticalCount > <span class="num">0</span>) {
-  <span class="fn">error</span>(<span class="str">"${sec.criticalCount} critical vulns"</span>)
-}
-echo <span class="str">"Score: ${sec.score}/10 — ${sec.severity}"</span></pre>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ════════════ REPORT PREVIEW ════════════ -->
-<section>
-<div class="container">
-  <div class="anim-slide">
-    <div class="section-label">Reporting</div>
-    <div class="section-title">A report worth reading</div>
-    <div class="section-sub">Every build generates a self-contained HTML report with composite scoring, per-analyzer breakdowns, and actionable fixes.</div>
-  </div>
-
-  <div class="report-preview anim-slide">
-    <div class="report-chrome">
-      <span class="terminal-dot"></span><span class="terminal-dot"></span><span class="terminal-dot"></span>
-    </div>
-    <div class="report-body">
-      <div class="report-kpis" style="grid-template-columns:repeat(5,1fr)">
-        <div class="report-kpi">
-          <div class="label">Composite score</div>
-          <div class="value" style="color:var(--teal)">7.8<span style="font-size:0.8rem;color:var(--text-muted)">/10</span></div>
-        </div>
-        <div class="report-kpi">
-          <div class="label">Verdict</div>
-          <div class="value" style="color:var(--accent)">SHIP IT</div>
-        </div>
-        <div class="report-kpi">
-          <div class="label">Total findings</div>
-          <div class="value">12</div>
-        </div>
-        <div class="report-kpi">
-          <div class="label">Critical / High</div>
-          <div class="value" style="color:var(--ember-1)">1 / 3</div>
-        </div>
-        <div class="report-kpi">
-          <div class="label">Analyzers Run</div>
-          <div class="value">6</div>
-        </div>
+<!-- ═════════════ PROVIDERS ═════════════ -->
+<section class="section" id="providers">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow">LLM providers</p>
+        <h2 class="display">Your model.<br>Your network.</h2>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
-            <span>Code Review</span><span style="color:var(--teal)">8/10</span>
-          </div>
-          <div class="report-bar"><div class="report-bar-fill" style="width:80%;background:var(--teal)"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin:12px 0 4px">
-            <span>Vulnerability</span><span style="color:var(--accent)">6/10</span>
-          </div>
-          <div class="report-bar"><div class="report-bar-fill" style="width:60%;background:var(--accent)"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin:12px 0 4px">
-            <span>Architecture Drift</span><span style="color:var(--teal)">9/10</span>
-          </div>
-          <div class="report-bar"><div class="report-bar-fill" style="width:90%;background:var(--teal)"></div></div>
+      <p class="sub">Choose a provider in Manage Jenkins → System. API keys stay in Jenkins credentials as Secret Text, and Test Connection checks the setup before your first build.</p>
+    </div>
+    <div class="providers">
+      <article class="prov rv" style="--d:0s">
+        <h3>OpenAI-compatible</h3>
+        <div class="route"><span class="ep">Jenkins</span><span class="line"><i></i><i></i></span><span class="ep m">/v1/chat/completions</span></div>
+        <p>OpenAI, plus any server that speaks the same API: LM Studio, vLLM, LocalAI, Groq.</p>
+        <dl class="specs">
+          <div><dt>Default</dt><dd><code>gpt-4o</code></dd></div>
+          <div><dt>Auth</dt><dd>Bearer key, optional for local servers</dd></div>
+          <div><dt>Retries</dt><dd>429 and 5xx, 3 attempts, honors Retry-After</dd></div>
+        </dl>
+      </article>
+      <article class="prov rv" style="--d:.06s">
+        <h3>Anthropic Claude</h3>
+        <div class="route"><span class="ep">Jenkins</span><span class="line"><i></i><i></i></span><span class="ep m">/v1/messages</span></div>
+        <p>Calls the Messages API directly, with a configurable endpoint for gateways and proxies.</p>
+        <dl class="specs">
+          <div><dt>Default</dt><dd><code>claude-opus-4-7</code></dd></div>
+          <div><dt>Auth</dt><dd>API key from a Secret Text credential</dd></div>
+          <div><dt>Retries</dt><dd>429, 529 and 5xx, 3 attempts, honors Retry-After</dd></div>
+        </dl>
+      </article>
+      <article class="prov rv" style="--d:.12s">
+        <h3>Ollama, fully local</h3>
+        <div class="route local"><span class="ep">Jenkins</span><span class="line"><i></i><i></i></span><span class="ep m">:11434</span></div>
+        <p>Runs on your own hardware for air-gapped teams. Point it at an Ollama server the Jenkins controller can reach.</p>
+        <dl class="specs">
+          <div><dt>Default</dt><dd><code>codellama:13b</code></dd></div>
+          <div><dt>Auth</dt><dd>None needed</dd></div>
+          <div><dt>Data</dt><dd>Your code never leaves your network</dd></div>
+        </dl>
+      </article>
+      <article class="prov rv" style="--d:.18s">
+        <h3>Bring your own</h3>
+        <div class="route"><span class="ep">Jenkins</span><span class="line"><i></i><i></i></span><span class="ep m">your API</span></div>
+        <p><code class="mono">LLMProvider</code> is a Jenkins extension point. Ship a provider in its own plugin and it appears in the provider list.</p>
+        <dl class="specs">
+          <div><dt>Extend</dt><dd><code>LLMProvider</code> + descriptor</dd></div>
+          <div><dt>Config</dt><dd>Same form, same Test Connection</dd></div>
+          <div><dt>Core</dt><dd>No changes to ForgeAI needed</dd></div>
+        </dl>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════ USAGE ═════════════ -->
+<section class="section alt" id="usage">
+  <div class="wrap">
+    <div class="head split">
+      <div>
+        <p class="eyebrow">Pipeline syntax</p>
+        <h2 class="display">One step, or one analyzer at a time.</h2>
+      </div>
+      <p class="sub"><code class="mono">forgeAI</code> runs the full suite on your workspace. <code class="mono">forgeAIScan</code> runs a single analyzer on any text you hand it. Both return values your pipeline can branch on.</p>
+    </div>
+    <div class="usage-grid">
+      <div class="code-card rv">
+        <div class="code-tabs" role="tablist" aria-label="Pipeline examples">
+          <button type="button" role="tab" id="ct-full" aria-controls="cp-full" aria-selected="true">Full suite</button>
+          <button type="button" role="tab" id="ct-scan" aria-controls="cp-scan" aria-selected="false">Single analyzer</button>
+          <button type="button" role="tab" id="ct-local" aria-controls="cp-local" aria-selected="false">Air-gapped</button>
+          <button type="button" class="copy" id="copyBtn">Copy</button>
         </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
-            <span>Test Gaps</span><span style="color:var(--accent)">7/10</span>
-          </div>
-          <div class="report-bar"><div class="report-bar-fill" style="width:70%;background:var(--accent)"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin:12px 0 4px">
-            <span>Dependency Risk</span><span style="color:var(--teal)">8/10</span>
-          </div>
-          <div class="report-bar"><div class="report-bar-fill" style="width:80%;background:var(--teal)"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin:12px 0 4px">
-            <span>Release Readiness</span><span style="color:var(--teal)">8/10</span>
-          </div>
-          <div class="report-bar"><div class="report-bar-fill" style="width:80%;background:var(--teal)"></div></div>
+<pre id="cp-full" role="tabpanel" aria-labelledby="ct-full"><code class="hl">stage('ForgeAI') {
+  steps {
+    script {
+      def report = forgeAI(
+        analyzers: ['code-review', 'vulnerability', 'architecture-drift',
+                    'test-gaps', 'dependency-risk', 'commit-intel',
+                    'pipeline-advisor', 'release-readiness'],
+        sourceGlob: 'src/main/java/**/*.java',
+        contextInfo: 'Spring Boot service, hexagonal architecture',
+        failOnCritical: true,
+        criticalThreshold: 6
+      )
+      echo "Composite: ${report.compositeScore}/10"
+      echo "Security:  ${report.vulnerabilityScore}/10"
+    }
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: 'forgeai-reports/**', allowEmptyArchive: true
+    }
+  }
+}</code></pre>
+<pre id="cp-scan" role="tabpanel" aria-labelledby="ct-scan" hidden><code class="hl">script {
+  def sec = forgeAIScan(
+    analyzer: 'vulnerability',
+    source: readFile('src/main/java/com/acme/pay/OrderRepository.java'),
+    context: 'Java 17 REST API that stores card holder data'
+  )
+  echo "Security ${sec.score}/10 (${sec.severity}): ${sec.summary}"
+  if (sec.criticalCount > 0) {
+    unstable("${sec.criticalCount} critical vulnerabilities")
+  }
+}</code></pre>
+<pre id="cp-local" role="tabpanel" aria-labelledby="ct-local" hidden><code class="hl">// Manage Jenkins → System → ForgeAI Pipeline Intelligence
+//   Provider: Ollama (Local)
+//   Endpoint: http://ollama.internal:11434   (reachable from the controller)
+//   Model:    codellama:13b
+pipeline {
+  agent any
+  stages {
+    stage('ForgeAI') {
+      steps {
+        script {
+          def r = forgeAI(analyzers: ['code-review', 'vulnerability', 'test-gaps'],
+                          sourceGlob: 'src/**/*.py',
+                          contextInfo: 'FastAPI service, air-gapped network')
+          echo "Composite: ${r.compositeScore}/10"
+        }
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <div class="ret">
+        <div class="panel rv">
+          <h3><code>forgeAI</code> returns</h3>
+          <dl class="kv">
+            <div><dt>compositeScore</dt><dd>average of all analyzer scores</dd></div>
+            <div><dt>totalFindings</dt><dd>findings across analyzers</dd></div>
+            <div><dt>criticalCount</dt><dd>findings marked CRITICAL</dd></div>
+            <div><dt>analyzerCount</dt><dd>analyzers that produced a result</dd></div>
+            <div><dt>failedAnalyzers</dt><dd>analyzers that errored or returned unreadable output</dd></div>
+            <div><dt>&lt;id&gt;Score</dt><dd>per analyzer, e.g. <code class="mono">report['code-reviewScore']</code></dd></div>
+          </dl>
+        </div>
+        <div class="panel rv">
+          <h3><code>forgeAIScan</code> returns</h3>
+          <dl class="kv">
+            <div><dt>score · severity</dt><dd>1–10 and CRITICAL … INFO</dd></div>
+            <div><dt>summary</dt><dd>2–3 sentence overview</dd></div>
+            <div><dt>findingsCount</dt><dd>with criticalCount and highCount</dd></div>
+          </dl>
         </div>
       </div>
     </div>
   </div>
-</div>
 </section>
 
-<!-- ════════════ QUICK START ════════════ -->
-<section id="quickstart">
-<div class="container">
-  <div class="anim-slide">
-    <div class="section-label">Quick start</div>
-    <div class="section-title">Up and running in 5 minutes</div>
+<!-- ═════════════ INSTALL ═════════════ -->
+<section class="section" id="install">
+  <div class="wrap">
+    <div class="head">
+      <p class="eyebrow">Get started</p>
+      <h2 class="display">Running in three steps.</h2>
+    </div>
+    <ol class="steps">
+      <li class="rv" style="--d:0s">
+        <h3>Install the plugin</h3>
+        <p>In Manage Jenkins → Plugins → Available plugins, search for <strong>ForgeAI Pipeline Intelligence</strong> and install it. Needs Jenkins 2.528.3 or newer.</p>
+      </li>
+      <li class="rv" style="--d:.08s">
+        <h3>Connect a model</h3>
+        <p>Open Manage Jenkins → System → ForgeAI Pipeline Intelligence. Pick a provider, choose the Secret Text credential with your API key, and click <strong>Test Connection</strong>.</p>
+      </li>
+      <li class="rv" style="--d:.16s">
+        <h3>Add the step</h3>
+        <p>Call <code>forgeAI</code> in any stage that has a workspace. The report lands in <code>forgeai-reports/</code>.</p>
+<pre>forgeAI analyzers: ['code-review', 'vulnerability']</pre>
+      </li>
+    </ol>
   </div>
-
-  <div class="install-steps anim-slide">
-    <div class="install-step">
-      <span class="step-num">1</span>
-      <h3>Install the plugin</h3>
-      <p>Search for <strong>ForgeAI Pipeline Intelligence</strong> in Manage Jenkins &rarr; Plugins &rarr; Available, or download the <code>.hpi</code> from the plugin site.</p>
-      <code>plugins.jenkins.io/forgeai-pipeline-intelligence</code>
-    </div>
-    <div class="install-step">
-      <span class="step-num">2</span>
-      <h3>Configure your LLM</h3>
-      <p>Go to Manage Jenkins &rarr; System &rarr; ForgeAI. Pick your provider, enter your API key credential, and hit Test Connection.</p>
-      <code>OpenAI → gpt-4o<br>Claude → claude-opus-4-7<br>Ollama → codellama:13b</code>
-    </div>
-    <div class="install-step">
-      <span class="step-num">3</span>
-      <h3>Add to your pipeline</h3>
-      <p>One step in your Jenkinsfile. Eight dimensions of intelligence. A report on every build.</p>
-      <code>forgeAI analyzers: ['code-review',<br>'vulnerability', 'architecture-drift']</code>
-    </div>
-  </div>
-</div>
 </section>
 
-<!-- ════════════ BUILT WITH CLAUDE ════════════ -->
-<section class="claude-section">
-<div class="container">
-  <div class="anim-slide">
-    <div class="section-label">Origin story</div>
-    <div class="section-title" style="text-align:center;margin:0 auto">Built with Claude by Anthropic</div>
-    <div class="section-sub" style="text-align:center;margin:0.8rem auto 0;max-width:620px">
-      This plugin was designed, architected, and coded in collaboration with Claude — Anthropic's AI assistant.
-      From the LLM provider abstraction to the prompt engineering for each analyzer, the entire codebase
-      was pair-programmed with AI. A testament to what's possible when human architectural vision
-      meets AI execution capability.
-    </div>
-    <div style="text-align:center">
-      <a href="https://claude.ai" target="_blank" class="claude-badge" style="text-decoration:none">
-        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="40" height="40" rx="8" fill="#6B21A8" fill-opacity="0.2"/>
-          <path d="M20 8C13.373 8 8 13.373 8 20s5.373 12 12 12 12-5.373 12-12S26.627 8 20 8zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10-10-4.477-10-10 4.477-10 10-10zm-2.5 5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm5 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM14 22a6 6 0 0012 0h-2a4 4 0 01-8 0h-2z" fill="#C4B5FD"/>
-        </svg>
-        <div class="claude-badge-text">
-          <div class="top">Pair-programmed with</div>
-          <div class="bottom">Claude &middot; Anthropic</div>
-        </div>
-      </a>
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="made rv">
+      <svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="14" fill="#141922" stroke="#5a2d12"/><g stroke="#d97757" stroke-width="3.2" stroke-linecap="round"><path d="M28 12v32M12 28h32M16.7 16.7l22.6 22.6M39.3 16.7L16.7 39.3"/></g></svg>
+      <div>
+        <h3>Pair-programmed with Claude</h3>
+        <p>ForgeAI was designed and built in collaboration with Claude, Anthropic's AI assistant, from the provider abstraction to every analyzer prompt. <a href="https://claude.ai" target="_blank" rel="noopener">Meet Claude</a></p>
+      </div>
     </div>
   </div>
-</div>
 </section>
 
-<!-- ════════════ CTA ════════════ -->
-<section class="cta-section">
-<div class="container" style="text-align:center">
-  <div class="anim-slide">
-    <div class="section-title">Start forging smarter pipelines today</div>
-    <p style="color:var(--text-secondary);margin-bottom:2rem;font-size:1.05rem">Open source. MIT License. Free forever.</p>
-    <div class="hero-actions" style="justify-content:center">
-      <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin" class="btn-primary" target="_blank">Star on GitHub</a>
-      <a href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" class="btn-secondary" target="_blank">Install from Update Center</a>
+<section class="final">
+  <div class="wrap">
+    <h2 class="display">Light the forge on<br>your <span class="molten">next build</span>.</h2>
+    <p>Free and open source under the MIT License. Install it from the Jenkins Update Center in a minute.</p>
+    <div class="cta-row">
+      <a class="btn btn-hot" href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" target="_blank" rel="noopener">Install from Update Center</a>
+      <a class="btn btn-ghost" href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin" target="_blank" rel="noopener"><svg aria-hidden="true"><use href="#i-github"/></svg>Star on GitHub</a>
     </div>
   </div>
-</div>
 </section>
+</main>
 
-<!-- ════════════ FOOTER ════════════ -->
 <footer>
-<div class="container">
-  <p>
-    ForgeAI Pipeline Intelligence &middot; <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin">GitHub</a> &middot;
-    <a href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/">Plugin Site</a> &middot;
-    <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin/blob/main/LICENSE">MIT License</a> &middot;
-    Built with <span style="color:var(--accent)">&hearts;</span> and Claude
-  </p>
-</div>
+  <div class="wrap">
+    <a class="brand" href="#top"><svg width="26" height="26" aria-hidden="true"><use href="#logo"/></svg><span>ForgeAI</span></a>
+    <nav aria-label="Footer">
+      <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://plugins.jenkins.io/forgeai-pipeline-intelligence/" target="_blank" rel="noopener">Plugin site</a>
+      <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin/issues" target="_blank" rel="noopener">Report an issue</a>
+      <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </nav>
+    <span>Built with Claude</span>
+  </div>
 </footer>
 
-<!-- ════════════ SCROLL ANIMATIONS ════════════ -->
 <script>
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-document.querySelectorAll('.anim-slide').forEach(el => observer.observe(el));
-</script>
+(() => {
+  "use strict";
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduced && "IntersectionObserver" in window) document.documentElement.classList.add("motion");
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+  /* ── Groovy highlighter ─────────────────────────────── */
+  const TOKENS = /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")|\b(\d+(?:\.\d+)?)\b|\b(def|if|true|false|null|return)\b|\b(forgeAI|forgeAIScan)\b|\b(pipeline|agent|any|stages|stage|steps|script|post|always|echo|unstable|archiveArtifacts|readFile)\b/g;
+  const CLS = [null, "t-com", "t-str", "t-num", "t-kw", "t-step", "t-dsl"];
+  function highlight(src) {
+    let out = "", last = 0, m;
+    TOKENS.lastIndex = 0;
+    while ((m = TOKENS.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      const g = m.findIndex((v, i) => i > 0 && v !== undefined);
+      out += `<span class="${CLS[g]}">${esc(m[0])}</span>`;
+      last = TOKENS.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  $$("code.hl").forEach(c => { c.innerHTML = highlight(c.textContent); });
+
+  /* ── Ember field ────────────────────────────────────── */
+  const Embers = (() => {
+    const canvas = $("#embers"), hero = $("#hero");
+    const ctx = canvas.getContext("2d");
+    let W = 0, H = 0, dpr = 1, ambient = [], sparks = [], visible = true, raf = 0;
+    const mouse = { x: -1e4, y: -1e4 };
+    const target = () => (W < 700 ? 60 : 140);
+    function resize() {
+      const r = hero.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = r.width; H = r.height;
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function ember(scatter) {
+      return { x: Math.random() * W, y: scatter ? Math.random() * H : H + Math.random() * 60,
+        vx: (Math.random() - .5) * .3, vy: -(.25 + Math.random() * 1.0),
+        r: .6 + Math.random() * 1.9, life: 0, max: 220 + Math.random() * 380, seed: Math.random() * 1000 };
+    }
+    function color(heat, a) {
+      // heat 1 → white-hot amber, 0 → deep slag red
+      const h = 14 + heat * 32, l = 48 + heat * 40;
+      return `hsla(${h.toFixed(0)},100%,${l.toFixed(0)}%,${a.toFixed(3)})`;
+    }
+    function burst(x, y, n = 40, power = 1) {
+      if (reduced) return;
+      for (let i = 0; i < n; i++) {
+        const ang = -Math.PI / 2 + (Math.random() - .5) * Math.PI * 1.25;
+        const sp = (1.5 + Math.random() * 4.5) * power;
+        sparks.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max: 35 + Math.random() * 45, r: .7 + Math.random() * 1.3 });
+      }
+      wake();
+    }
+    function frame(t) {
+      raf = 0;
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "lighter";
+      while (ambient.length < target()) ambient.push(ember(false));
+      for (let i = ambient.length - 1; i >= 0; i--) {
+        const p = ambient[i];
+        p.life++;
+        p.vx += Math.sin((p.life + p.seed) * .03) * .012;
+        const dx = p.x - mouse.x, dy = p.y - mouse.y, d2 = dx * dx + dy * dy;
+        if (d2 < 16000) { const f = (1 - d2 / 16000) * .35; const d = Math.sqrt(d2) || 1; p.vx += dx / d * f; p.vy += dy / d * f; }
+        p.vx *= .985; p.vy = p.vy * .995 - .004;
+        p.x += p.vx; p.y += p.vy;
+        const k = 1 - p.life / p.max;
+        if (k <= 0 || p.y < -20 || p.x < -20 || p.x > W + 20) { ambient.splice(i, 1); continue; }
+        const flick = .65 + .35 * Math.sin(t * .012 + p.seed);
+        const a = Math.min(1, k * 1.6) * flick;
+        ctx.fillStyle = color(k * .9, a * .16);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4.2, 0, 6.283); ctx.fill();
+        ctx.fillStyle = color(Math.min(1, k + .2), a);
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * k + .35, 0, 6.283); ctx.fill();
+      }
+      ctx.lineCap = "round";
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        s.life++; s.vy += .09; s.vx *= .985;
+        s.x += s.vx; s.y += s.vy;
+        const k = 1 - s.life / s.max;
+        if (k <= 0) { sparks.splice(i, 1); continue; }
+        ctx.strokeStyle = color(k, Math.min(1, k * 1.5));
+        ctx.lineWidth = s.r * (k + .3);
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 2.6, s.y - s.vy * 2.6); ctx.stroke();
+      }
+      ctx.globalCompositeOperation = "source-over";
+      wake();
+    }
+    function wake() { if (!raf && visible && !document.hidden && !reduced) raf = requestAnimationFrame(frame); }
+    function still() {
+      // reduced motion: one quiet frame of glowing embers
+      ctx.clearRect(0, 0, W, H); ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < target() * .6; i++) {
+        const p = ember(true), k = .3 + Math.random() * .6;
+        ctx.fillStyle = color(k, .14); ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, 6.283); ctx.fill();
+        ctx.fillStyle = color(k, .8); ctx.beginPath(); ctx.arc(p.x, p.y, p.r * .9, 0, 6.283); ctx.fill();
+      }
+      ctx.globalCompositeOperation = "source-over";
+    }
+    resize();
+    for (let i = 0; i < target(); i++) ambient.push(ember(true));
+    if (reduced) still();
+    window.addEventListener("resize", () => { resize(); if (reduced) still(); });
+    hero.addEventListener("pointermove", e => { const r = canvas.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
+    hero.addEventListener("pointerleave", () => { mouse.x = mouse.y = -1e4; });
+    hero.addEventListener("click", e => {
+      if (e.target.closest("a,button,.term")) return;
+      const r = canvas.getBoundingClientRect(); burst(e.clientX - r.left, e.clientY - r.top, 46, 1.1);
+    });
+    if ("IntersectionObserver" in window) new IntersectionObserver(es => { visible = es[0].isIntersecting; wake(); }).observe(hero);
+    document.addEventListener("visibilitychange", wake);
+    wake();
+    return {
+      burstAt(el, n, power) {
+        const r = canvas.getBoundingClientRect(), b = el.getBoundingClientRect();
+        burst(b.left - r.left + b.width * (.2 + Math.random() * .6), b.bottom - r.top - 4, n, power);
+      }
+    };
+  })();
+
+  /* ── Hero console replay ────────────────────────────── */
+  const JF = `stage('ForgeAI') {
+  steps {
+    script {
+      def report = forgeAI(
+        analyzers: ['code-review', 'vulnerability',
+                    'architecture-drift', 'test-gaps',
+                    'dependency-risk', 'commit-intel',
+                    'pipeline-advisor', 'release-readiness'],
+        sourceGlob: 'src/main/java/**/*.java',
+        failOnCritical: true,
+        criticalThreshold: 6
+      )
+    }
+  }
+}`;
+  const RUN = [
+    ["code-review", "AI Code Review", 9, 3, "12.4"],
+    ["vulnerability", "Security Vulnerability Analysis", 8, 2, "15.1"],
+    ["architecture-drift", "Architecture Drift Detection", 9, 1, "13.7"],
+    ["test-gaps", "Test Gap Analysis", 7, 5, "14.9"],
+    ["dependency-risk", "Dependency Risk Scoring", 8, 2, "8.2"],
+    ["commit-intel", "Commit Intelligence", 9, 1, "6.8"],
+    ["pipeline-advisor", "Pipeline Optimization Advisor", 8, 3, "7.5"],
+    ["release-readiness", "Release Readiness Score", 8, 2, "9.3"]
+  ];
+  const LOG = (() => {
+    const L = [];
+    const add = (segs, o = {}) => L.push(Object.assign({ segs, d: 140 }, o));
+    add([["[Pipeline] stage (ForgeAI)", "c-dim"]], { d: 250 });
+    add([["[Pipeline] forgeAI", "c-dim"]]);
+    add([["╔══ ", "c-box"], ["🔥 ForgeAI Pipeline Intelligence v1.0", "c-ash"]], { d: 300 });
+    add([["║   ", "c-box"], ["Provider: Anthropic Claude (claude-opus-4-7)", "c-steel"]]);
+    add([["╚══", "c-box"]]);
+    add([["[ForgeAI] Included 38 source file(s) in the analysis.", ""]], { d: 400 });
+    RUN.forEach(([id, name, score, findings, secs]) => {
+      add([["\n━━━ Running: " + name + " ━━━", "c-hot"]], { d: 260 });
+      if (id === "dependency-risk") add([["[ForgeAI] Included 3 manifest file(s) in the analysis.", ""]], { d: 120 });
+      add([["[ForgeAI/" + id + "] Sending analysis request to LLM...", "c-q"]], { d: 100, wait: 700 + Math.round(+secs * 40) });
+      add([["[ForgeAI/" + id + "] ", "c-dim"], ["Score: " + score + "/10", "score-chip"], [" | Findings: " + findings + " | Time: " + secs + "s", ""]], { d: 60, spark: true });
+    });
+    add([["\n📊 ForgeAI report saved to: forgeai-reports/forgeai-report.html", "c-ash"]], { d: 380 });
+    add([["╔═══════════════════════════════════════════╗", "c-box"]], { d: 220 });
+    add([["║   ", "c-box"], ["Composite Score:  ", "c-ash"], ["8.3 / 10", "c-hot"]], { finale: true });
+    add([["║   ", "c-box"], ["Total Findings:   19", "c-ash"]]);
+    add([["╚═══════════════════════════════════════════╝", "c-box"]]);
+    add([["[Pipeline] // stage", "c-dim"]], { d: 300 });
+    add([["Finished: SUCCESS", "finish ok"]], { d: 380, done: true });
+    return L;
+  })();
+
+  const term = $("#term"), paneJf = $("#pane-jf"), paneLog = $("#pane-log");
+  const tabJf = $("#tab-jf"), tabLog = $("#tab-log"), status = $("#termStatus"), statusText = $("#termStatusText");
+  function showTab(which) {
+    const jf = which === "jf";
+    tabJf.setAttribute("aria-selected", jf); tabLog.setAttribute("aria-selected", !jf);
+    paneJf.hidden = !jf; paneLog.hidden = jf;
+  }
+  tabJf.addEventListener("click", () => showTab("jf"));
+  tabLog.addEventListener("click", () => showTab("log"));
+  function lineEl(l, animate) {
+    const div = document.createElement("div");
+    if (animate) div.className = "ln";
+    div.innerHTML = l.segs.map(([t, c]) => c ? `<span class="${c}">${esc(t)}</span>` : esc(t)).join("");
+    return div;
+  }
+  function renderFinal() {
+    paneJf.innerHTML = highlight(JF);
+    paneLog.innerHTML = "";
+    LOG.forEach(l => paneLog.appendChild(lineEl(l, false)));
+    paneLog.scrollTop = paneLog.scrollHeight;
+    setStatus("payments-service #128 · Success", false);
+  }
+  function setStatus(text, running) { statusText.textContent = text; status.classList.toggle("running", running); }
+  renderFinal();
+
+  let termVisible = true;
+  if ("IntersectionObserver" in window) new IntersectionObserver(es => { termVisible = es[0].isIntersecting; }).observe(term);
+  async function waitVisible() { while (!termVisible || document.hidden) await sleep(400); }
+  async function pause(ms) { await sleep(ms); await waitVisible(); }
+
+  async function play() {
+    await pause(2600);
+    for (;;) {
+      // 1. type the Jenkinsfile
+      showTab("jf"); setStatus("payments-service #128 · Queued", true);
+      for (let i = 0; i <= JF.length; i += 3) {
+        paneJf.innerHTML = highlight(JF.slice(0, i)) + '<span class="caret"></span>';
+        await sleep(14);
+        if (!termVisible) await waitVisible();
+      }
+      paneJf.innerHTML = highlight(JF);
+      await pause(800);
+      // 2. stream the console
+      showTab("log"); paneLog.innerHTML = ""; setStatus("payments-service #128 · Running", true);
+      for (const l of LOG) {
+        await pause(l.d);
+        const el = lineEl(l, true);
+        paneLog.appendChild(el);
+        paneLog.scrollTop = paneLog.scrollHeight;
+        if (l.wait) { el.classList.add("spin"); await pause(l.wait); el.classList.remove("spin"); }
+        if (l.spark) Embers.burstAt(term, 16, .8);
+        if (l.finale) { Embers.burstAt(term, 70, 1.35); setTimeout(() => Embers.burstAt(term, 50, 1.1), 180); }
+        if (l.done) setStatus("payments-service #128 · Success", false);
+      }
+      await pause(9000);
+    }
+  }
+  if (!reduced) play();
+
+  /* ── Flow wires ─────────────────────────────────────── */
+  (() => {
+    const flow = $("#flow"), svg = $("#flowWires"), NS = "http://www.w3.org/2000/svg";
+    const nodes = $$("[data-node]", flow);
+    const byId = Object.fromEntries(nodes.map(n => [n.dataset.node, n]));
+    const edges = [];
+    nodes.forEach(n => (n.dataset.in || "").split(/\s+/).filter(Boolean).forEach(from => edges.push({ from, to: n.dataset.node, g: null })));
+    const wide = matchMedia("(min-width: 900px)");
+    function draw() {
+      svg.textContent = "";
+      if (!wide.matches) return;
+      const fr = flow.getBoundingClientRect();
+      svg.setAttribute("viewBox", `0 0 ${fr.width} ${fr.height}`);
+      edges.forEach((e, i) => {
+        const a = byId[e.from].getBoundingClientRect(), b = byId[e.to].getBoundingClientRect();
+        let d;
+        if (Math.abs(a.left - b.left) < 4) {
+          const x = a.left + a.width / 2 - fr.left;
+          d = `M${x} ${a.bottom - fr.top} L${x} ${b.top - fr.top}`;
+        } else {
+          const x1 = a.right - fr.left, y1 = a.top + a.height / 2 - fr.top;
+          const x2 = b.left - fr.left, y2 = b.top + b.height / 2 - fr.top, dx = (x2 - x1) * .55;
+          d = `M${x1} ${y1} C${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`;
+        }
+        const g = document.createElementNS(NS, "g"); g.setAttribute("class", "wire");
+        const base = document.createElementNS(NS, "path"); base.setAttribute("class", "wire-base"); base.setAttribute("d", d); base.id = "wire" + i;
+        const fl = document.createElementNS(NS, "path"); fl.setAttribute("class", "wire-flow"); fl.setAttribute("d", d);
+        g.append(base, fl);
+        if (!reduced) {
+          const dot = document.createElementNS(NS, "circle"); dot.setAttribute("r", "2.6"); dot.setAttribute("class", "wire-dot");
+          const am = document.createElementNS(NS, "animateMotion");
+          am.setAttribute("dur", (2.2 + (i % 5) * .35) + "s"); am.setAttribute("repeatCount", "indefinite"); am.setAttribute("begin", (-(i * .37) % 2.2).toFixed(2) + "s");
+          const mp = document.createElementNS(NS, "mpath"); mp.setAttribute("href", "#wire" + i);
+          mp.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#wire" + i);
+          am.appendChild(mp); dot.appendChild(am); g.appendChild(dot);
+        }
+        svg.appendChild(g); e.g = g;
+      });
+      if (pinned) light(pinned);
+    }
+    function chain(id) {
+      const set = new Set(), lit = new Set([id]);
+      const walk = (start, dir) => {
+        const stack = [start];
+        while (stack.length) {
+          const c = stack.pop();
+          edges.forEach((e, i) => {
+            const match = dir > 0 ? e.from === c : e.to === c;
+            if (match && !set.has(i)) { set.add(i); const nxt = dir > 0 ? e.to : e.from; lit.add(nxt); stack.push(nxt); }
+          });
+        }
+      };
+      walk(id, 1); walk(id, -1);
+      return { set, lit };
+    }
+    let pinned = null;
+    function light(id) {
+      const { set, lit } = chain(id);
+      flow.classList.add("focus");
+      nodes.forEach(n => n.classList.toggle("lit", lit.has(n.dataset.node)));
+      edges.forEach((e, i) => e.g && e.g.classList.toggle("hot", set.has(i)));
+    }
+    function clear() {
+      if (pinned) return light(pinned);
+      flow.classList.remove("focus");
+      nodes.forEach(n => n.classList.remove("lit"));
+      edges.forEach(e => e.g && e.g.classList.remove("hot"));
+    }
+    nodes.forEach(n => {
+      n.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") light(n.dataset.node); });
+      n.addEventListener("pointerleave", e => { if (e.pointerType === "mouse") clear(); });
+      n.addEventListener("focus", () => light(n.dataset.node));
+      n.addEventListener("blur", clear);
+      n.addEventListener("click", () => { pinned = pinned === n.dataset.node ? null : n.dataset.node; pinned ? light(pinned) : clear(); });
+      n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); n.click(); } });
+    });
+    draw();
+    if ("ResizeObserver" in window) new ResizeObserver(() => draw()).observe(flow); else window.addEventListener("resize", draw);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  })();
+
+  /* ── Card spotlight + tilt ──────────────────────────── */
+  const canTilt = !reduced && matchMedia("(hover: hover) and (pointer: fine)").matches;
+  $$(".card").forEach(c => {
+    c.addEventListener("pointermove", e => {
+      const r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      c.style.setProperty("--mx", x + "px"); c.style.setProperty("--my", y + "px");
+      if (canTilt) c.style.transform = `perspective(900px) rotateX(${((y / r.height) - .5) * -7}deg) rotateY(${((x / r.width) - .5) * 9}deg) translateY(-4px)`;
+    });
+    c.addEventListener("pointerleave", () => { c.style.transform = ""; });
+  });
+
+  /* ── Scroll reveals, count-ups, report ring ─────────── */
+  function countUp(el) {
+    const end = parseFloat(el.dataset.count), dec = +(el.dataset.decimals || 0), suf = el.dataset.suffix || "";
+    const t0 = performance.now(), dur = 1300;
+    const tick = now => {
+      const k = Math.min(1, (now - t0) / dur), v = end * (1 - Math.pow(1 - k, 3));
+      el.textContent = v.toFixed(dec) + suf;
+      if (k < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+  if (!reduced && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      el.classList.add("in");
+      if (el.matches("[data-count]")) countUp(el);
+      if (el.id === "ring") {
+        const fg = $("#ringFg"), off = fg.getAttribute("stroke-dashoffset");
+        fg.style.transition = "none"; fg.style.strokeDashoffset = "276.46";
+        requestAnimationFrame(() => requestAnimationFrame(() => { fg.style.transition = "stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)"; fg.style.strokeDashoffset = off; }));
+      }
+      io.unobserve(el);
+    }), { threshold: .18 });
+    $$(".rv, #ring, #bars, [data-count]").forEach(el => io.observe(el));
+  }
+
+  /* ── Quality gate simulator ─────────────────────────── */
+  (() => {
+    const scoresBox = $("#gateScores");
+    const state = RUN.map(([id, , score]) => ({ id, score }));
+    state.forEach(s => {
+      const row = document.createElement("div");
+      row.className = "score-row"; row.id = "row-" + s.id;
+      row.innerHTML = `<label for="score-${s.id}">${s.id}</label><output id="out-${s.id}" for="score-${s.id}">${s.score}</output><input type="range" id="score-${s.id}" min="1" max="10" step="1" value="${s.score}">`;
+      scoresBox.appendChild(row);
+    });
+    const on = $("#gateOn"), thr = $("#gateThreshold"), thrOut = $("#gateThresholdOut"), fault = $("#gateFault");
+    const verdict = $("#gateVerdict"), dial = $("#gateDial"), comp = $("#gateComposite"), result = $("#gateResult"), chip = $("#gateChip"), log = $("#gateLog");
+    let lastOk = true;
+    function render() {
+      const gateOn = on.checked, threshold = +thr.value, f = fault.value;
+      thrOut.textContent = threshold;
+      const results = [], failed = [], lines = [];
+      state.forEach(s => {
+        const input = $("#score-" + s.id), out = $("#out-" + s.id), row = $("#row-" + s.id);
+        const outage = f === "outage" && s.id === "vulnerability", garbled = f === "garbled" && s.id === "code-review";
+        input.disabled = outage || garbled;
+        row.classList.toggle("off", outage); row.classList.toggle("warned", garbled);
+        if (outage) {
+          out.textContent = "✕";
+          lines.push(["c-bad", `[ForgeAI/${s.id}] ERROR: API returned HTTP 503 after 3 attempts`]);
+          failed.push(s.id); return;
+        }
+        let score = +input.value;
+        if (garbled) {
+          score = 5;
+          lines.push(["c-warn", `[ForgeAI/${s.id}] WARNING: Could not parse LLM response as JSON. Storing raw response.`]);
+          failed.push(s.id);
+        }
+        out.textContent = score;
+        results.push(score);
+        lines.push(["", `[ForgeAI/${s.id}] Score: ${score}/10`]);
+      });
+      const composite = results.length ? results.reduce((a, b) => a + b, 0) / results.length : 5.0;
+      const shown = composite.toFixed(1);
+      lines.push(["c-hot", `║   Composite Score:  ${shown} / 10`]);
+      if (failed.length) lines.push(["c-warn", `[ForgeAI] WARNING: analyzer(s) did not produce a usable result: ${failed.join(", ")}`]);
+      let ok = true;
+      if (gateOn) {
+        if (failed.length) { ok = false; lines.push(["c-bad", `[ForgeAI] BUILD FAILED — quality gate could not be evaluated; analyzer(s) failed: ${failed.join(", ")}`]); }
+        else if (!results.length) lines.push(["", "[ForgeAI] No analyzers ran — quality gate skipped."]);
+        else if (composite < threshold) { ok = false; lines.push(["c-bad", `[ForgeAI] BUILD FAILED — Composite score ${shown} is below threshold ${threshold}`]); }
+      }
+      lines.push([ok ? "c-ok" : "c-bad", `Finished: ${ok ? "SUCCESS" : "FAILURE"}`]);
+      log.innerHTML = lines.map(([c, t]) => c ? `<span class="${c}">${esc(t)}</span>` : esc(t)).join("\n");
+
+      comp.textContent = shown;
+      dial.style.strokeDashoffset = (251.33 * (1 - composite / 10)).toFixed(2);
+      dial.style.stroke = composite >= 8 ? "var(--sev-low)" : composite >= 6 ? "var(--sev-medium)" : composite >= 4 ? "var(--sev-high)" : "var(--sev-critical)";
+      const band = composite >= 8 ? ["ship", "SHIP IT"] : composite >= 6 ? ["caution", "CAUTION"] : composite >= 4 ? ["hold", "HOLD"] : ["block", "BLOCK"];
+      chip.className = "chip " + band[0]; chip.textContent = band[1];
+      result.textContent = ok ? "SUCCESS" : "FAILURE";
+      verdict.classList.toggle("ok", ok); verdict.classList.toggle("bad", !ok);
+      if (ok !== lastOk) { verdict.classList.remove("flash"); void verdict.offsetWidth; verdict.classList.add("flash"); lastOk = ok; }
+    }
+    $("#gateForm").addEventListener("input", render);
+    $("#gateForm").addEventListener("change", render);
+    $("#gateForm").addEventListener("submit", e => e.preventDefault());
+    render();
+  })();
+
+  /* ── Usage tabs + copy ──────────────────────────────── */
+  (() => {
+    const tabs = $$('.code-tabs [role="tab"]');
+    tabs.forEach(t => t.addEventListener("click", () => {
+      tabs.forEach(o => { const on = o === t; o.setAttribute("aria-selected", on); $("#" + o.getAttribute("aria-controls")).hidden = !on; });
+    }));
+    const btn = $("#copyBtn");
+    btn.addEventListener("click", () => {
+      const pane = $$(".code-card pre").find(p => !p.hidden), text = pane.textContent;
+      const done = msg => { btn.textContent = msg; setTimeout(() => { btn.textContent = "Copy"; }, 1600); };
+      const fallback = () => { const r = document.createRange(); r.selectNodeContents(pane); const s = getSelection(); s.removeAllRanges(); s.addRange(r); done("Selected"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => done("Copied"), fallback);
+      else fallback();
+    });
+  })();
+})();
+</script>
 </body>
 </html>
