@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ForgeAI Pipeline Intelligence</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Open-source Jenkins plugin that runs eight AI analyzers in your pipeline: code review, vulnerabilities, architecture drift, test gaps, dependency risk, commits, Jenkinsfile tuning and release readiness. Works with OpenAI, Claude and Ollama.">
+<meta name="description" content="Open-source Jenkins plugin that runs eight AI analyzers in your pipeline: code review, vulnerabilities, architecture drift, test gaps, dependency risk, commits, Jenkinsfile tuning and release readiness. Pull-request builds analyze only what changed, and findings export as SARIF for Warnings NG. Works with OpenAI, Claude and Ollama.">
 <meta name="keywords" content="Jenkins plugin, AI code review, quality gate, DevOps, CI/CD, vulnerability analysis, architecture drift, Ollama, Claude, OpenAI">
 <meta name="theme-color" content="#07080b">
 
@@ -131,7 +131,8 @@ h3{font-family:var(--font-display);font-stretch:112%;font-weight:800;font-size:1
 .term-tabs{display:flex;gap:4px;min-width:0}
 .term-tabs button{font:500 .78rem/1 var(--font-mono);color:var(--dim);background:none;border:1px solid transparent;padding:7px 10px;border-radius:7px;cursor:pointer;white-space:nowrap}
 .term-tabs button[aria-selected="true"]{color:var(--ash);background:var(--iron);border-color:var(--seam)}
-.term-status{margin-left:auto;display:flex;align-items:center;gap:8px;font:500 .74rem/1 var(--font-mono);color:var(--steel);white-space:nowrap}
+.term-status{margin-left:auto;display:flex;align-items:center;gap:8px;font:500 .74rem/1 var(--font-mono);color:var(--steel);white-space:nowrap;min-width:0;overflow:hidden}
+#termStatusText{overflow:hidden;text-overflow:ellipsis}
 .term-status .dot{width:8px;height:8px;border-radius:50%;background:var(--sev-low)}
 .term-status.running .dot{background:var(--flare);animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:.25}}
@@ -355,6 +356,9 @@ select{width:100%;font:500 .9rem/1.3 var(--font-body);color:var(--ash);backgroun
 .steps h3{margin-bottom:10px}
 .steps p{margin:0;color:var(--steel);font-size:.93rem;position:relative}
 .steps code{font-size:.82rem;color:var(--flare)}
+.snippet{margin:22px 0 0;padding:14px 16px;border-radius:10px;background:var(--ink);border:1px solid var(--seam);font:400 .8rem/1.6 var(--font-mono);overflow-x:auto;color:var(--ash);max-width:62ch}
+.quick{margin:22px 0 0;color:var(--steel);font-size:.95rem}
+.quick a{color:var(--flare)}
 .steps pre{position:relative;margin:14px 0 0;padding:12px 14px;border-radius:10px;background:var(--ink);border:1px solid var(--seam);font:400 .78rem/1.6 var(--font-mono);overflow-x:auto;color:var(--ash)}
 
 /* ── Claude + CTA ─────────────────────────────────────── */
@@ -453,7 +457,7 @@ footer a:hover{color:var(--flare)}
             <button type="button" role="tab" id="tab-jf" aria-controls="pane-jf" aria-selected="false">Jenkinsfile</button>
             <button type="button" role="tab" id="tab-log" aria-controls="pane-log" aria-selected="true">Console Output</button>
           </div>
-          <div class="term-status" id="termStatus"><span class="dot"></span><span id="termStatusText">payments-service #128 · Success</span></div>
+          <div class="term-status" id="termStatus"><span class="dot"></span><span id="termStatusText">PR-42 #3 · Success</span></div>
         </div>
         <pre class="term-body" id="pane-jf" role="tabpanel" aria-labelledby="tab-jf" hidden></pre>
         <div class="term-body" id="pane-log" role="tabpanel" aria-labelledby="tab-log" aria-live="off"></div>
@@ -463,7 +467,7 @@ footer a:hover{color:var(--flare)}
     <div class="stats rv">
       <div class="stat"><b data-count="8">8</b><span>specialist analyzers</span></div>
       <div class="stat"><b data-count="3">3</b><span>provider types, plus your own</span></div>
-      <div class="stat"><b data-count="60" data-suffix="K">60K</b><span>characters of source per analysis</span></div>
+      <div class="stat"><b><em>PR</em></b><span>builds analyze only the files that changed</span></div>
       <div class="stat"><b><em>1</em></b><span>composite score gates the release</span></div>
     </div>
   </div>
@@ -491,10 +495,10 @@ footer a:hover{color:var(--flare)}
       <svg class="flow-wires" id="flowWires" aria-hidden="true"></svg>
       <div class="flow-col">
         <h3>From your workspace</h3>
-        <div class="node" tabindex="0" data-node="src"><strong>Source files</strong><small>sourceGlob · whole files up to 60,000 characters</small></div>
+        <div class="node" tabindex="0" data-node="src"><strong>Source files</strong><small>sourceGlob · only the changed files on pull requests</small></div>
         <div class="node" tabindex="0" data-node="jf"><strong>Jenkinsfile</strong><small>Jenkinsfile or .jenkins/Jenkinsfile</small></div>
         <div class="node" tabindex="0" data-node="mf"><strong>Dependency manifests</strong><small>pom.xml · build.gradle · package.json · go.mod · Cargo.toml · 5 more</small></div>
-        <div class="node" tabindex="0" data-node="git"><strong>Git history</strong><small>last 20 commits + HEAD diff</small></div>
+        <div class="node" tabindex="0" data-node="git"><strong>Git history</strong><small>commits since the base branch, or the last 20</small></div>
       </div>
       <div class="flow-col mid">
         <h3>Analyzers</h3>
@@ -510,10 +514,10 @@ footer a:hover{color:var(--flare)}
         <h3>Verdict</h3>
         <div class="node key" tabindex="0" data-node="rr" data-in="code-review vulnerability architecture-drift test-gaps pipeline-advisor dependency-risk commit-intel"><strong>release-readiness</strong><small>weighs every result before it</small></div>
         <div class="node key" tabindex="0" data-node="gate" data-in="rr"><strong>Composite score → quality gate</strong><small>average of all scores vs. your threshold</small></div>
-        <div class="node key" tabindex="0" data-node="out" data-in="gate"><strong>Report + return values</strong><small>forgeai-report.html · compositeScore · failedAnalyzers</small></div>
+        <div class="node key" tabindex="0" data-node="out" data-in="gate"><strong>Report + return values</strong><small>HTML report · SARIF for Warnings NG · compositeScore</small></div>
       </div>
     </div>
-    <p class="flow-hint">● ForgeAI makes one LLM call per analyzer and parses the JSON it returns into a 1–10 score and findings.</p>
+    <p class="flow-hint">● Analyzers run in parallel. Source too large for one request is split into parts of up to 60,000 characters, and each analyzer's parts are merged into one 1–10 score and one list of findings.</p>
   </div>
 </section>
 
@@ -646,6 +650,10 @@ footer a:hover{color:var(--flare)}
         <li><span class="chip hold">HOLD</span>4 to 5.9</li>
         <li><span class="chip block">BLOCK</span>Below 4</li>
       </ul>
+      <p class="sub">Every run also writes <code class="mono">forgeai-report.sarif</code>, the standard format for static-analysis results. Pass it to the Warnings NG plugin to see each finding against its source line, with trend charts and Warnings NG's own quality gates. GitHub code scanning reads the same file.</p>
+<pre class="snippet"><code class="hl">recordIssues tool: sarif(
+    pattern: report.sarifFile,
+    id: 'forgeai', name: 'ForgeAI')</code></pre>
     </div>
 
     <div class="window rv">
@@ -768,6 +776,7 @@ footer a:hover{color:var(--flare)}
       <div class="code-card rv">
         <div class="code-tabs" role="tablist" aria-label="Pipeline examples">
           <button type="button" role="tab" id="ct-full" aria-controls="cp-full" aria-selected="true">Full suite</button>
+          <button type="button" role="tab" id="ct-pr" aria-controls="cp-pr" aria-selected="false">Pull requests</button>
           <button type="button" role="tab" id="ct-scan" aria-controls="cp-scan" aria-selected="false">Single analyzer</button>
           <button type="button" role="tab" id="ct-local" aria-controls="cp-local" aria-selected="false">Air-gapped</button>
           <button type="button" class="copy" id="copyBtn">Copy</button>
@@ -786,6 +795,8 @@ footer a:hover{color:var(--flare)}
       )
       echo "Composite: ${report.compositeScore}/10"
       echo "Security:  ${report.vulnerabilityScore}/10"
+      recordIssues tool: sarif(pattern: report.sarifFile,
+                               id: 'forgeai', name: 'ForgeAI')
     }
   }
   post {
@@ -794,6 +805,18 @@ footer a:hover{color:var(--flare)}
     }
   }
 }</code></pre>
+<pre id="cp-pr" role="tabpanel" aria-labelledby="ct-pr" hidden><code class="hl">// On a multibranch pull-request build, scope 'auto' (the default)
+// analyzes only the files the PR changed, compared with its target branch.
+script {
+  def report = forgeAI(analyzers: ['code-review', 'vulnerability', 'test-gaps'],
+                       sourceGlob: 'src/**/*.java')
+  echo "Analyzed ${report.filesAnalyzed} file(s), scope: ${report.analysisScope}"
+}
+
+// Compare with a ref of your choice instead:
+//   forgeAI(scope: 'changes', baseRef: 'origin/release-2.x', ...)
+// Always analyze every matching file:
+//   forgeAI(scope: 'all', ...)</code></pre>
 <pre id="cp-scan" role="tabpanel" aria-labelledby="ct-scan" hidden><code class="hl">script {
   def sec = forgeAIScan(
     analyzer: 'vulnerability',
@@ -835,6 +858,8 @@ pipeline {
             <div><dt>criticalCount</dt><dd>findings marked CRITICAL</dd></div>
             <div><dt>analyzerCount</dt><dd>analyzers that produced a result</dd></div>
             <div><dt>failedAnalyzers</dt><dd>analyzers that errored or returned unreadable output</dd></div>
+            <div><dt>analysisScope</dt><dd><code class="mono">changes</code> or <code class="mono">all</code>, with filesAnalyzed and filesSkipped</dd></div>
+            <div><dt>sarifFile</dt><dd>path of the SARIF file, for <code class="mono">recordIssues</code></dd></div>
             <div><dt>&lt;id&gt;Score</dt><dd>per analyzer, e.g. <code class="mono">report['code-reviewScore']</code></dd></div>
           </dl>
         </div>
@@ -873,6 +898,7 @@ pipeline {
 <pre>forgeAI analyzers: ['code-review', 'vulnerability']</pre>
       </li>
     </ol>
+    <p class="quick">Want to see it first? The <a href="https://github.com/jenkinsci/forgeai-pipeline-intelligence-plugin/tree/main/demo" target="_blank" rel="noopener">Docker quickstart</a> starts Jenkins, ForgeAI and a local Ollama model with one <code class="mono">docker compose up</code>. No API key, and nothing leaves your machine.</p>
   </div>
 </section>
 
@@ -1053,6 +1079,8 @@ pipeline {
         failOnCritical: true,
         criticalThreshold: 6
       )
+      recordIssues tool: sarif(pattern: report.sarifFile,
+                               id: 'forgeai', name: 'ForgeAI')
     }
   }
 }`;
@@ -1074,7 +1102,9 @@ pipeline {
     add([["╔══ ", "c-box"], ["🔥 ForgeAI Pipeline Intelligence v1.0", "c-ash"]], { d: 300 });
     add([["║   ", "c-box"], ["Provider: Anthropic Claude (claude-opus-4-7)", "c-steel"]]);
     add([["╚══", "c-box"]]);
-    add([["[ForgeAI] Included 38 source file(s) in the analysis.", ""]], { d: 400 });
+    add([["[ForgeAI] Scope: 7 file(s) changed relative to origin/main.", ""]], { d: 400 });
+    add([["[ForgeAI] Included 5 source file(s) in the analysis.", ""]], { d: 160 });
+    add([["\n[ForgeAI] Running 8 analysis requests, up to 4 at a time.", "c-steel"]], { d: 200 });
     RUN.forEach(([id, name, score, findings, secs]) => {
       add([["\n━━━ Running: " + name + " ━━━", "c-hot"]], { d: 260 });
       if (id === "dependency-risk") add([["[ForgeAI] Included 3 manifest file(s) in the analysis.", ""]], { d: 120 });
@@ -1082,10 +1112,13 @@ pipeline {
       add([["[ForgeAI/" + id + "] ", "c-dim"], ["Score: " + score + "/10", "score-chip"], [" | Findings: " + findings + " | Time: " + secs + "s", ""]], { d: 60, spark: true });
     });
     add([["\n📊 ForgeAI report saved to: forgeai-reports/forgeai-report.html", "c-ash"]], { d: 380 });
+    add([["[ForgeAI] SARIF saved to: forgeai-reports/forgeai-report.sarif (17 finding(s) with a file location)", "c-ash"]], { d: 160 });
     add([["╔═══════════════════════════════════════════╗", "c-box"]], { d: 220 });
     add([["║   ", "c-box"], ["Composite Score:  ", "c-ash"], ["8.3 / 10", "c-hot"]], { finale: true });
     add([["║   ", "c-box"], ["Total Findings:   19", "c-ash"]]);
     add([["╚═══════════════════════════════════════════╝", "c-box"]]);
+    add([["[Pipeline] recordIssues", "c-dim"]], { d: 300 });
+    add([["[ForgeAI] -> found 17 issues (skipped 0 duplicates)", ""]], { d: 200 });
     add([["[Pipeline] // stage", "c-dim"]], { d: 300 });
     add([["Finished: SUCCESS", "finish ok"]], { d: 380, done: true });
     return L;
@@ -1111,7 +1144,7 @@ pipeline {
     paneLog.innerHTML = "";
     LOG.forEach(l => paneLog.appendChild(lineEl(l, false)));
     paneLog.scrollTop = paneLog.scrollHeight;
-    setStatus("payments-service #128 · Success", false);
+    setStatus("PR-42 #3 · Success", false);
   }
   function setStatus(text, running) { statusText.textContent = text; status.classList.toggle("running", running); }
   renderFinal();
@@ -1125,7 +1158,7 @@ pipeline {
     await pause(2600);
     for (;;) {
       // 1. type the Jenkinsfile
-      showTab("jf"); setStatus("payments-service #128 · Queued", true);
+      showTab("jf"); setStatus("PR-42 #3 · Queued", true);
       for (let i = 0; i <= JF.length; i += 3) {
         paneJf.innerHTML = highlight(JF.slice(0, i)) + '<span class="caret"></span>';
         await sleep(14);
@@ -1134,7 +1167,7 @@ pipeline {
       paneJf.innerHTML = highlight(JF);
       await pause(800);
       // 2. stream the console
-      showTab("log"); paneLog.innerHTML = ""; setStatus("payments-service #128 · Running", true);
+      showTab("log"); paneLog.innerHTML = ""; setStatus("PR-42 #3 · Running", true);
       for (const l of LOG) {
         await pause(l.d);
         const el = lineEl(l, true);
@@ -1143,7 +1176,7 @@ pipeline {
         if (l.wait) { el.classList.add("spin"); await pause(l.wait); el.classList.remove("spin"); }
         if (l.spark) Embers.burstAt(term, 16, .8);
         if (l.finale) { Embers.burstAt(term, 70, 1.35); setTimeout(() => Embers.burstAt(term, 50, 1.1), 180); }
-        if (l.done) setStatus("payments-service #128 · Success", false);
+        if (l.done) setStatus("PR-42 #3 · Success", false);
       }
       await pause(9000);
     }
