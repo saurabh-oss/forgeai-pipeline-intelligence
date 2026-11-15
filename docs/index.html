@@ -514,7 +514,7 @@ footer a:hover{color:var(--flare)}
         <h3>Verdict</h3>
         <div class="node key" tabindex="0" data-node="rr" data-in="code-review vulnerability architecture-drift test-gaps pipeline-advisor dependency-risk commit-intel"><strong>release-readiness</strong><small>weighs every result before it</small></div>
         <div class="node key" tabindex="0" data-node="gate" data-in="rr"><strong>Composite score → quality gate</strong><small>average of all scores vs. your threshold</small></div>
-        <div class="node key" tabindex="0" data-node="out" data-in="gate"><strong>Report + return values</strong><small>HTML report · SARIF for Warnings NG · compositeScore</small></div>
+        <div class="node key" tabindex="0" data-node="out" data-in="gate"><strong>Report + return values</strong><small>build page · score trend · SARIF · compositeScore</small></div>
       </div>
     </div>
     <p class="flow-hint">● Analyzers run in parallel. Source too large for one request is split into parts of up to 60,000 characters, and each analyzer's parts are merged into one 1–10 score and one list of findings.</p>
@@ -643,7 +643,7 @@ footer a:hover{color:var(--flare)}
     <div>
       <p class="eyebrow">Report</p>
       <h2 class="display">Every build leaves a report.</h2>
-      <p class="sub">ForgeAI writes a self-contained HTML report to <code class="mono">forgeai-reports/forgeai-report.html</code>: the composite score, a verdict, each analyzer's score and every finding with its file, line and suggested fix. Archive it, or publish it on the build page with the HTML Publisher plugin.</p>
+      <p class="sub">Every build that runs ForgeAI gets a <strong>ForgeAI Analysis</strong> page: the composite score, a verdict, each analyzer's score and every finding with its file, line and suggested fix. The job page charts the composite score across builds, so you can see quality move. Jenkins renders both itself, with no extra plugin. A self-contained HTML report is also written to <code class="mono">forgeai-reports/</code> for archiving.</p>
       <ul class="bands">
         <li><span class="chip ship">SHIP IT</span>Composite score of 8 or more</li>
         <li><span class="chip caution">CAUTION</span>6 to 7.9</li>
@@ -659,7 +659,7 @@ footer a:hover{color:var(--flare)}
     <div class="window rv">
       <div class="window-bar">
         <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
-        <div class="url">job/payments-service/128/artifact/forgeai-reports/forgeai-report.html</div>
+        <div class="url">job/payments-service/128/forgeai-analysis/</div>
       </div>
       <div class="rep">
         <div class="rep-head">
